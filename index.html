@@ -1105,12 +1105,18 @@ const originalShowCustomModal = window.showCustomModal;
         }
     </script>
 <script>
+// Track current active tab for swipe direction
+let currentTab = 'cash-counter';
+
 function switchTab(tab) {
+    if (tab === currentTab) return;
+    currentTab = tab;
+
     const cashContainer = document.getElementById('cash-counter-container');
     const trackerContainer = document.getElementById('tracker-app-container');
     const tabCash = document.getElementById('tab-cash-counter');
     const tabTracker = document.getElementById('tab-donation-tracker');
-    
+
     const activeClass = "flex-1 py-4 text-center font-bold text-violet-600 dark:text-violet-400 border-b-4 border-violet-600 dark:border-violet-500 bg-violet-50 dark:bg-slate-800/50 transition-colors";
     const inactiveClass = "flex-1 py-4 text-center font-semibold text-slate-500 dark:text-slate-400 border-b-4 border-transparent hover:text-violet-600 dark:hover:text-violet-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors";
 
@@ -1126,6 +1132,49 @@ function switchTab(tab) {
         tabTracker.className = activeClass;
     }
 }
+
+// Swipe gesture support for tab switching
+(function() {
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchEndX = 0;
+    let touchEndY = 0;
+    const SWIPE_THRESHOLD = 60; // minimum px to trigger swipe
+    const MAX_VERTICAL_RATIO = 0.4; // if vertical movement exceeds 40% of horizontal, ignore swipe
+
+    document.addEventListener('touchstart', function(e) {
+        touchStartX = e.changedTouches[0].screenX;
+        touchStartY = e.changedTouches[0].screenY;
+    }, { passive: true });
+
+    document.addEventListener('touchend', function(e) {
+        touchEndX = e.changedTouches[0].screenX;
+        touchEndY = e.changedTouches[0].screenY;
+        handleSwipe();
+    }, { passive: true });
+
+    function handleSwipe() {
+        const diffX = touchEndX - touchStartX;
+        const diffY = touchEndY - touchStartY;
+        const absDiffX = Math.abs(diffX);
+        const absDiffY = Math.abs(diffY);
+
+        // Only trigger if horizontal swipe is dominant and exceeds threshold
+        if (absDiffX > SWIPE_THRESHOLD && absDiffX > absDiffY / (1 - MAX_VERTICAL_RATIO)) {
+            if (diffX < 0) {
+                // Swipe left → go to next tab (Donation Tracker)
+                if (currentTab === 'cash-counter') {
+                    switchTab('donation-tracker');
+                }
+            } else {
+                // Swipe right → go to previous tab (Cash Counter)
+                if (currentTab === 'donation-tracker') {
+                    switchTab('cash-counter');
+                }
+            }
+        }
+    }
+})();
 </script>
 
 <script>
