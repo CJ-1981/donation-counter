@@ -84,51 +84,187 @@
 .dark [data-radix-popper-content-wrapper] {
   color: #e2e8f0;
 }
-</style>
+	/* Fix for the exact button structure you showed me */
+	.dark button.bg-primary-50.dark\:bg-primary-900\/20,
+	.dark button[class*="bg-primary-50"][class*="dark:bg-primary-900/20"] {
+		background-color: #1e293b !important;
+	}
+	/* Also target buttons with bg-primary-50 in dark mode (broader) */
+	.dark button[class*="bg-primary-50"] {
+		background-color: #1e293b !important;
+		color: #e2e8f0 !important;
+	}
+	/* Force all bg-primary-50 elements in dark mode */
+	.dark [class*="bg-primary-50"] {
+		background-color: #1e293b !important;
+	}
+	</style>
 <script>
 /* Runtime fix: patch any Radix Select elements that escape CSS selectors */
 (function() {
     function patchRadixDark() {
-        var isDark = document.documentElement.classList.contains('dark');
+        // Safety check for document.body
+        if (!document.body) {
+            return;
+        }
+
+        // Comprehensive dark mode detection
+        var htmlHasDark = document.documentElement.classList.contains('dark');
+        var bodyHasDark = document.body.classList.contains('dark');
+        var bodyClasses = document.body.className;
+
+        // Check computed styles to see if we're actually in dark mode
+        var bodyBgColor = window.getComputedStyle(document.body).backgroundColor;
+        var isDarkByBg = bodyBgColor === 'rgb(2, 6, 23)' || bodyBgColor === 'rgb(15, 23, 42)' ||
+                         bodyBgColor === '#020617' || bodyBgColor === '#0f172a';
+
+        var isDark = htmlHasDark || bodyHasDark || isDarkByBg;
+
+        console.log('Dark mode detection:');
+        console.log('  html.classList.contains("dark"):', htmlHasDark);
+        console.log('  body.classList.contains("dark"):', bodyHasDark);
+        console.log('  body className:', bodyClasses);
+        console.log('  body background-color:', bodyBgColor);
+        console.log('  isDarkByBg:', isDarkByBg);
+        console.log('  FINAL isDark:', isDark);
+
+        // Always run DOM debugging to understand the structure
+        console.log('DOM Analysis in', isDark ? 'DARK' : 'LIGHT', 'mode:');
+
+        // Debug: Try to find ANY elements that might be dropdown-related
+        var allDivs = document.querySelectorAll('div');
+        var allButtons = document.querySelectorAll('button');
+        var allRoles = document.querySelectorAll('[role="option"], [role="listbox"]');
+
+        console.log('  Total divs:', allDivs.length);
+        console.log('  Total buttons:', allButtons.length);
+        console.log('  Elements with role="option"/"listbox":', allRoles.length);
+
+        // Look for any elements that might be dropdown content
+        var possibleDropdowns = Array.from(allDivs).filter(function(div) {
+            var className = div.className || '';
+            return className.includes('radix') || className.includes('dropdown') || className.includes('select') || div.hasAttribute('data-radix');
+        });
+
+        console.log('  Possible dropdown elements:', possibleDropdowns.length);
+
+        // Show first few candidates
+        possibleDropdowns.slice(0, 5).forEach(function(el, i) {
+            console.log('  Candidate', i, ':', el.tagName, el.className.substring(0, 100), el.id);
+        });
+
+        // Only process if we actually found dropdown elements
         var wrappers = document.querySelectorAll('[data-radix-popper-content-wrapper]');
+        console.log('  Radix wrappers found:', wrappers.length);
+
+        if (wrappers.length === 0) {
+            console.log('  No wrappers found - checking alternative selectors');
+            // Try alternative selectors
+            var altSelectors = [
+                '[data-state="open"]',
+                '[role="listbox"]',
+                '[role="option"]',
+                '.radix-dropdown-content'
+            ];
+            altSelectors.forEach(function(selector) {
+                var found = document.querySelectorAll(selector);
+                if (found.length > 0) {
+                    console.log('  Found', found.length, 'elements with selector:', selector);
+                }
+            });
+            return;
+        }
+
+        // Debug: Try to find ANY elements that might be dropdown-related
+        var allDivs = document.querySelectorAll('div');
+        var allButtons = document.querySelectorAll('button');
+        var allRoles = document.querySelectorAll('[role="option"], [role="listbox"]');
+
+        console.log('DOM elements found:');
+        console.log('  Total divs:', allDivs.length);
+        console.log('  Total buttons:', allButtons.length);
+        console.log('  Elements with role="option"/"listbox":', allRoles.length);
+
+        // Look for any elements that might be dropdown content
+        var possibleDropdowns = Array.from(allDivs).filter(function(div) {
+            var className = div.className || '';
+            return className.includes('radix') || className.includes('dropdown') || className.includes('select') || div.hasAttribute('data-radix');
+        });
+
+        console.log('  Possible dropdown elements:', possibleDropdowns.length);
+
+        // Show first few candidates
+        possibleDropdowns.slice(0, 5).forEach(function(el, i) {
+            console.log('  Candidate', i, ':', el.tagName, el.className, el.id);
+        });
+
         wrappers.forEach(function(w) {
-            w.querySelectorAll('[class*="bg-white"]').forEach(function(el) {
+            console.log('Found wrapper, processing...');
+            var options = w.querySelectorAll('[role="option"], button[class*="bg-primary-50"], button[data-state]');
+            console.log('Found options/buttons:', options.length);
+
+            options.forEach(function(el, index) {
+                console.log('Processing element', index, ':', el.tagName, el.className, el.getAttribute('data-state'));
+
                 if (isDark) {
+                    // Apply dark mode styles aggressively
                     el.style.setProperty('background-color', '#1e293b', 'important');
                     el.style.setProperty('color', '#e2e8f0', 'important');
                     el.style.setProperty('border-color', '#334155', 'important');
+                    console.log('Applied dark styles to element', index);
+                } else {
+                    // Remove dark mode styles - use specific property removal
+                    if (el.style.getPropertyValue('background-color') === 'rgb(30, 41, 59)' ||
+                        el.style.getPropertyValue('background-color') === '#1e293b') {
+                        el.style.removeProperty('background-color');
+                    }
+                    if (el.style.getPropertyValue('color') === 'rgb(226, 232, 240)' ||
+                        el.style.getPropertyValue('color') === '#e2e8f0') {
+                        el.style.removeProperty('color');
+                    }
+                    console.log('Cleaned element', index);
                 }
             });
-            w.querySelectorAll('[role="option"]').forEach(function(el) {
-                if (isDark) {
-                    el.style.setProperty('background-color', '#1e293b', 'important');
-                    el.style.setProperty('color', '#e2e8f0', 'important');
-                }
-            });
-        });
-        /* Fix trigger button specifically */
-        var triggers = document.querySelectorAll('[data-slot="select-trigger"]');
-        triggers.forEach(function(el) {
-            if (isDark) {
-                el.style.setProperty('background-color', '#1e293b', 'important');
-                el.style.setProperty('color', '#e2e8f0', 'important');
-                el.style.setProperty('border-color', '#334155', 'important');
-            } else {
-                el.style.removeProperty('background-color');
-                el.style.removeProperty('color');
-                el.style.removeProperty('border-color');
-            }
         });
     }
     /* Observe DOM changes and dark mode class toggles */
     var observer = new MutationObserver(function() { patchRadixDark(); });
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-    observer.observe(document.body, { childList: true, subtree: true });
-    document.addEventListener('DOMContentLoaded', function() { patchRadixDark(); });
-    /* Run immediately and periodically to catch late renders */
-    patchRadixDark();
-    setInterval(patchRadixDark, 500);
-    setTimeout(patchRadixDark, 2000);
+    /* Only observe body if it exists - use separate observer for body */
+    var bodyObserver = new MutationObserver(function() { patchRadixDark(); });
+    if (document.body) {
+        bodyObserver.observe(document.body, { childList: true, subtree: true });
+    } else {
+        document.addEventListener('DOMContentLoaded', function() {
+            if (document.body) {
+                bodyObserver.observe(document.body, { childList: true, subtree: true });
+            }
+        });
+    }
+    // Only start patching after DOM is fully loaded to prevent errors
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM loaded, starting aggressive patching');
+
+        patchRadixDark();
+
+        // Run much more frequently to catch dropdown opening/closing
+        setInterval(patchRadixDark, 50); // Run every 50ms instead of 200ms
+
+        // Also patch on every interaction to catch dropdown opening
+        document.addEventListener('click', function() {
+            setTimeout(patchRadixDark, 10); // Almost immediate patching after clicks
+        }, true); // Use capture phase
+
+        document.addEventListener('keydown', function() {
+            setTimeout(patchRadixDark, 10); // Patch after keyboard navigation
+        }, true);
+    });
+
+    // Safety check in case DOM is already loaded
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        console.log('DOM already loaded, starting patchRadixDark immediately');
+        setTimeout(patchRadixDark, 100);
+    }
 })();
 </script>
     <script type="module" crossorigin>(function(){const u=document.createElement("link").relList;if(u&&u.supports&&u.supports("modulepreload"))return;for(const r of document.querySelectorAll('link[rel="modulepreload"]'))s(r);new MutationObserver(r=>{for(const h of r)if(h.type==="childList")for(const p of h.addedNodes)p.tagName==="LINK"&&p.rel==="modulepreload"&&s(p)}).observe(document,{childList:!0,subtree:!0});function c(r){const h={};return r.integrity&&(h.integrity=r.integrity),r.referrerPolicy&&(h.referrerPolicy=r.referrerPolicy),r.crossOrigin==="use-credentials"?h.credentials="include":r.crossOrigin==="anonymous"?h.credentials="omit":h.credentials="same-origin",h}function s(r){if(r.ep)return;r.ep=!0;const h=c(r);fetch(r.href,h)}})();function Rh(f){return f&&f.__esModule&&Object.prototype.hasOwnProperty.call(f,"default")?f.default:f}var Lo={exports:{}},Gl={};var Wd;function r0(){if(Wd)return Gl;Wd=1;var f=Symbol.for("react.transitional.element"),u=Symbol.for("react.fragment");function c(s,r,h){var p=null;if(h!==void 0&&(p=""+h),r.key!==void 0&&(p=""+r.key),"key"in r){h={};for(var g in r)g!=="key"&&(h[g]=r[g])}else h=r;return r=h.ref,{$$typeof:f,type:s,key:p,ref:r!==void 0?r:null,props:h}}return Gl.Fragment=u,Gl.jsx=c,Gl.jsxs=c,Gl}var Id;function f0(){return Id||(Id=1,Lo.exports=r0()),Lo.exports}var _=f0(),Ho={exports:{}},ee={};var Pd;function d0(){if(Pd)return ee;Pd=1;var f=Symbol.for("react.transitional.element"),u=Symbol.for("react.portal"),c=Symbol.for("react.fragment"),s=Symbol.for("react.strict_mode"),r=Symbol.for("react.profiler"),h=Symbol.for("react.consumer"),p=Symbol.for("react.context"),g=Symbol.for("react.forward_ref"),S=Symbol.for("react.suspense"),m=Symbol.for("react.memo"),D=Symbol.for("react.lazy"),C=Symbol.for("react.activity"),w=Symbol.iterator;function q(v){return v===null||typeof v!="object"?null:(v=w&&v[w]||v["@@iterator"],typeof v=="function"?v:null)}var Q={isMounted:function(){return!1},enqueueForceUpdate:function(){},enqueueReplaceState:function(){},enqueueSetState:function(){}},J=Object.assign,ie={};function xe(v,z,B){this.props=v,this.context=z,this.refs=ie,this.updater=B||Q}xe.prototype.isReactComponent={},xe.prototype.setState=function(v,z){if(typeof v!="object"&&typeof v!="function"&&v!=null)throw Error("takes an object of state variables to update or a function which returns an object of state variables.");this.updater.enqueueSetState(this,v,z,"setState")},xe.prototype.forceUpdate=function(v){this.updater.enqueueForceUpdate(this,v,"forceUpdate")};function be(){}be.prototype=xe.prototype;function ge(v,z,B){this.props=v,this.context=z,this.refs=ie,this.updater=B||Q}var me=ge.prototype=new be;me.constructor=ge,J(me,xe.prototype),me.isPureReactComponent=!0;var ze=Array.isArray;function je(){}var $={H:null,A:null,T:null,S:null},Ye=Object.prototype.hasOwnProperty;function te(v,z,B){var G=B.ref;return{$$typeof:f,type:v,key:z,ref:G!==void 0?G:null,props:B}}function ae(v,z){return te(v.type,z,v.props)}function he(v){return typeof v=="object"&&v!==null&&v.$$typeof===f}function ue(v){var z={"=":"=0",":":"=2"};return"$"+v.replace(/[=:]/g,function(B){return z[B]})}var Me=/\/+/g;function De(v,z){return typeof v=="object"&&v!==null&&v.key!=null?ue(""+v.key):z.toString(36)}function Ze(v){switch(v.status){case"fulfilled":return v.value;case"rejected":throw v.reason;default:switch(typeof v.status=="string"?v.then(je,je):(v.status="pending",v.then(function(z){v.status==="pending"&&(v.status="fulfilled",v.value=z)},function(z){v.status==="pending"&&(v.status="rejected",v.reason=z)})),v.status){case"fulfilled":return v.value;case"rejected":throw v.reason}}throw v}function N(v,z,B,G,P){var M=typeof v;(M==="undefined"||M==="boolean")&&(v=null);var Y=!1;if(v===null)Y=!0;else switch(M){case"bigint":case"string":case"number":Y=!0;break;case"object":switch(v.$$typeof){case f:case u:Y=!0;break;case D:return Y=v._init,N(Y(v._payload),z,B,G,P)}}if(Y)return P=P(v),Y=G===""?"."+De(v,0):G,ze(P)?(B="",Y!=null&&(B=Y.replace(Me,"$&/")+"/"),N(P,z,B,"",function(Ce){return Ce})):P!=null&&(he(P)&&(P=ae(P,B+(P.key==null||v&&v.key===P.key?"":(""+P.key).replace(Me,"$&/")+"/")+Y)),z.push(P)),1;Y=0;var L=G===""?".":G+":";if(ze(v))for(var F=0;F<v.length;F++)G=v[F],M=L+De(G,F),Y+=N(G,z,B,M,P);else if(F=q(v),typeof F=="function")for(v=F.call(v),F=0;!(G=v.next()).done;)G=G.value,M=L+De(G,F++),Y+=N(G,z,B,M,P);else if(M==="object"){if(typeof v.then=="function")return N(Ze(v),z,B,G,P);throw z=String(v),Error("Objects are not valid as a React child (found: "+(z==="[object Object]"?"object with keys {"+Object.keys(v).join(", ")+"}":z)+"). If you meant to render a collection of children, use an array instead.")}return Y}function H(v,z,B){if(v==null)return v;var G=[],P=0;return N(v,G,"","",function(M){return z.call(B,M,P++)}),G}function K(v){if(v._status===-1){var z=v._result;z=z(),z.then(function(B){(v._status===0||v._status===-1)&&(v._status=1,v._result=B)},function(B){(v._status===0||v._status===-1)&&(v._status=2,v._result=B)}),v._status===-1&&(v._status=0,v._result=z)}if(v._status===1)return v._result.default;throw v._result}var ce=typeof reportError=="function"?reportError:function(v){if(typeof window=="object"&&typeof window.ErrorEvent=="function"){var z=new window.ErrorEvent("error",{bubbles:!0,cancelable:!0,message:typeof v=="object"&&v!==null&&typeof v.message=="string"?String(v.message):String(v),error:v});if(!window.dispatchEvent(z))return}else if(typeof process=="object"&&typeof process.emit=="function"){process.emit("uncaughtException",v);return}console.error(v)},pe={map:H,forEach:function(v,z,B){H(v,function(){z.apply(this,arguments)},B)},count:function(v){var z=0;return H(v,function(){z++}),z},toArray:function(v){return H(v,function(z){return z})||[]},only:function(v){if(!he(v))throw Error("React.Children.only expected to receive a single React element child.");return v}};return ee.Activity=C,ee.Children=pe,ee.Component=xe,ee.Fragment=c,ee.Profiler=r,ee.PureComponent=ge,ee.StrictMode=s,ee.Suspense=S,ee.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE=$,ee.__COMPILER_RUNTIME={__proto__:null,c:function(v){return $.H.useMemoCache(v)}},ee.cache=function(v){return function(){return v.apply(null,arguments)}},ee.cacheSignal=function(){return null},ee.cloneElement=function(v,z,B){if(v==null)throw Error("The argument must be a React element, but you passed "+v+".");var G=J({},v.props),P=v.key;if(z!=null)for(M in z.key!==void 0&&(P=""+z.key),z)!Ye.call(z,M)||M==="key"||M==="__self"||M==="__source"||M==="ref"&&z.ref===void 0||(G[M]=z[M]);var M=arguments.length-2;if(M===1)G.children=B;else if(1<M){for(var Y=Array(M),L=0;L<M;L++)Y[L]=arguments[L+2];G.children=Y}return te(v.type,P,G)},ee.createContext=function(v){return v={$$typeof:p,_currentValue:v,_currentValue2:v,_threadCount:0,Provider:null,Consumer:null},v.Provider=v,v.Consumer={$$typeof:h,_context:v},v},ee.createElement=function(v,z,B){var G,P={},M=null;if(z!=null)for(G in z.key!==void 0&&(M=""+z.key),z)Ye.call(z,G)&&G!=="key"&&G!=="__self"&&G!=="__source"&&(P[G]=z[G]);var Y=arguments.length-2;if(Y===1)P.children=B;else if(1<Y){for(var L=Array(Y),F=0;F<Y;F++)L[F]=arguments[F+2];P.children=L}if(v&&v.defaultProps)for(G in Y=v.defaultProps,Y)P[G]===void 0&&(P[G]=Y[G]);return te(v,M,P)},ee.createRef=function(){return{current:null}},ee.forwardRef=function(v){return{$$typeof:g,render:v}},ee.isValidElement=he,ee.lazy=function(v){return{$$typeof:D,_payload:{_status:-1,_result:v},_init:K}},ee.memo=function(v,z){return{$$typeof:m,type:v,compare:z===void 0?null:z}},ee.startTransition=function(v){var z=$.T,B={};$.T=B;try{var G=v(),P=$.S;P!==null&&P(B,G),typeof G=="object"&&G!==null&&typeof G.then=="function"&&G.then(je,ce)}catch(M){ce(M)}finally{z!==null&&B.types!==null&&(z.types=B.types),$.T=z}},ee.unstable_useCacheRefresh=function(){return $.H.useCacheRefresh()},ee.use=function(v){return $.H.use(v)},ee.useActionState=function(v,z,B){return $.H.useActionState(v,z,B)},ee.useCallback=function(v,z){return $.H.useCallback(v,z)},ee.useContext=function(v){return $.H.useContext(v)},ee.useDebugValue=function(){},ee.useDeferredValue=function(v,z){return $.H.useDeferredValue(v,z)},ee.useEffect=function(v,z){return $.H.useEffect(v,z)},ee.useEffectEvent=function(v){return $.H.useEffectEvent(v)},ee.useId=function(){return $.H.useId()},ee.useImperativeHandle=function(v,z,B){return $.H.useImperativeHandle(v,z,B)},ee.useInsertionEffect=function(v,z){return $.H.useInsertionEffect(v,z)},ee.useLayoutEffect=function(v,z){return $.H.useLayoutEffect(v,z)},ee.useMemo=function(v,z){return $.H.useMemo(v,z)},ee.useOptimistic=function(v,z){return $.H.useOptimistic(v,z)},ee.useReducer=function(v,z,B){return $.H.useReducer(v,z,B)},ee.useRef=function(v){return $.H.useRef(v)},ee.useState=function(v){return $.H.useState(v)},ee.useSyncExternalStore=function(v,z,B){return $.H.useSyncExternalStore(v,z,B)},ee.useTransition=function(){return $.H.useTransition()},ee.version="19.2.4",ee}var eh;function Su(){return eh||(eh=1,Ho.exports=d0()),Ho.exports}var W=Su();const h0=Rh(W);var Bo={exports:{}},Vl={},wo={exports:{}},Yo={};var th;function g0(){return th||(th=1,(function(f){function u(N,H){var K=N.length;N.push(H);e:for(;0<K;){var ce=K-1>>>1,pe=N[ce];if(0<r(pe,H))N[ce]=H,N[K]=pe,K=ce;else break e}}function c(N){return N.length===0?null:N[0]}function s(N){if(N.length===0)return null;var H=N[0],K=N.pop();if(K!==H){N[0]=K;e:for(var ce=0,pe=N.length,v=pe>>>1;ce<v;){var z=2*(ce+1)-1,B=N[z],G=z+1,P=N[G];if(0>r(B,K))G<pe&&0>r(P,B)?(N[ce]=P,N[G]=K,ce=G):(N[ce]=B,N[z]=K,ce=z);else if(G<pe&&0>r(P,K))N[ce]=P,N[G]=K,ce=G;else break e}}return H}function r(N,H){var K=N.sortIndex-H.sortIndex;return K!==0?K:N.id-H.id}if(f.unstable_now=void 0,typeof performance=="object"&&typeof performance.now=="function"){var h=performance;f.unstable_now=function(){return h.now()}}else{var p=Date,g=p.now();f.unstable_now=function(){return p.now()-g}}var S=[],m=[],D=1,C=null,w=3,q=!1,Q=!1,J=!1,ie=!1,xe=typeof setTimeout=="function"?setTimeout:null,be=typeof clearTimeout=="function"?clearTimeout:null,ge=typeof setImmediate<"u"?setImmediate:null;function me(N){for(var H=c(m);H!==null;){if(H.callback===null)s(m);else if(H.startTime<=N)s(m),H.sortIndex=H.expirationTime,u(S,H);else break;H=c(m)}}function ze(N){if(J=!1,me(N),!Q)if(c(S)!==null)Q=!0,je||(je=!0,ue());else{var H=c(m);H!==null&&Ze(ze,H.startTime-N)}}var je=!1,$=-1,Ye=5,te=-1;function ae(){return ie?!0:!(f.unstable_now()-te<Ye)}function he(){if(ie=!1,je){var N=f.unstable_now();te=N;var H=!0;try{e:{Q=!1,J&&(J=!1,be($),$=-1),q=!0;var K=w;try{t:{for(me(N),C=c(S);C!==null&&!(C.expirationTime>N&&ae());){var ce=C.callback;if(typeof ce=="function"){C.callback=null,w=C.priorityLevel;var pe=ce(C.expirationTime<=N);if(N=f.unstable_now(),typeof pe=="function"){C.callback=pe,me(N),H=!0;break t}C===c(S)&&s(S),me(N)}else s(S);C=c(S)}if(C!==null)H=!0;else{var v=c(m);v!==null&&Ze(ze,v.startTime-N),H=!1}}break e}finally{C=null,w=K,q=!1}H=void 0}}finally{H?ue():je=!1}}}var ue;if(typeof ge=="function")ue=function(){ge(he)};else if(typeof MessageChannel<"u"){var Me=new MessageChannel,De=Me.port2;Me.port1.onmessage=he,ue=function(){De.postMessage(null)}}else ue=function(){xe(he,0)};function Ze(N,H){$=xe(function(){N(f.unstable_now())},H)}f.unstable_IdlePriority=5,f.unstable_ImmediatePriority=1,f.unstable_LowPriority=4,f.unstable_NormalPriority=3,f.unstable_Profiling=null,f.unstable_UserBlockingPriority=2,f.unstable_cancelCallback=function(N){N.callback=null},f.unstable_forceFrameRate=function(N){0>N||125<N?console.error("forceFrameRate takes a positive int between 0 and 125, forcing frame rates higher than 125 fps is not supported"):Ye=0<N?Math.floor(1e3/N):5},f.unstable_getCurrentPriorityLevel=function(){return w},f.unstable_next=function(N){switch(w){case 1:case 2:case 3:var H=3;break;default:H=w}var K=w;w=H;try{return N()}finally{w=K}},f.unstable_requestPaint=function(){ie=!0},f.unstable_runWithPriority=function(N,H){switch(N){case 1:case 2:case 3:case 4:case 5:break;default:N=3}var K=w;w=N;try{return H()}finally{w=K}},f.unstable_scheduleCallback=function(N,H,K){var ce=f.unstable_now();switch(typeof K=="object"&&K!==null?(K=K.delay,K=typeof K=="number"&&0<K?ce+K:ce):K=ce,N){case 1:var pe=-1;break;case 2:pe=250;break;case 5:pe=1073741823;break;case 4:pe=1e4;break;default:pe=5e3}return pe=K+pe,N={id:D++,callback:H,priorityLevel:N,startTime:K,expirationTime:pe,sortIndex:-1},K>ce?(N.sortIndex=K,u(m,N),c(S)===null&&N===c(m)&&(J?(be($),$=-1):J=!0,Ze(ze,K-ce))):(N.sortIndex=pe,u(S,N),Q||q||(Q=!0,je||(je=!0,ue()))),N},f.unstable_shouldYield=ae,f.unstable_wrapCallback=function(N){var H=w;return function(){var K=w;w=H;try{return N.apply(this,arguments)}finally{w=K}}}})(Yo)),Yo}var ah;function m0(){return ah||(ah=1,wo.exports=g0()),wo.exports}var qo={exports:{}},at={};var nh;function p0(){if(nh)return at;nh=1;var f=Su();function u(S){var m="https://react.dev/errors/"+S;if(1<arguments.length){m+="?args[]="+encodeURIComponent(arguments[1]);for(var D=2;D<arguments.length;D++)m+="&args[]="+encodeURIComponent(arguments[D])}return"Minified React error #"+S+"; visit "+m+" for the full message or use the non-minified dev environment for full errors and additional helpful warnings."}function c(){}var s={d:{f:c,r:function(){throw Error(u(522))},D:c,C:c,L:c,m:c,X:c,S:c,M:c},p:0,findDOMNode:null},r=Symbol.for("react.portal");function h(S,m,D){var C=3<arguments.length&&arguments[3]!==void 0?arguments[3]:null;return{$$typeof:r,key:C==null?null:""+C,children:S,containerInfo:m,implementation:D}}var p=f.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;function g(S,m){if(S==="font")return"";if(typeof m=="string")return m==="use-credentials"?m:""}return at.__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE=s,at.createPortal=function(S,m){var D=2<arguments.length&&arguments[2]!==void 0?arguments[2]:null;if(!m||m.nodeType!==1&&m.nodeType!==9&&m.nodeType!==11)throw Error(u(299));return h(S,m,null,D)},at.flushSync=function(S){var m=p.T,D=s.p;try{if(p.T=null,s.p=2,S)return S()}finally{p.T=m,s.p=D,s.d.f()}},at.preconnect=function(S,m){typeof S=="string"&&(m?(m=m.crossOrigin,m=typeof m=="string"?m==="use-credentials"?m:"":void 0):m=null,s.d.C(S,m))},at.prefetchDNS=function(S){typeof S=="string"&&s.d.D(S)},at.preinit=function(S,m){if(typeof S=="string"&&m&&typeof m.as=="string"){var D=m.as,C=g(D,m.crossOrigin),w=typeof m.integrity=="string"?m.integrity:void 0,q=typeof m.fetchPriority=="string"?m.fetchPriority:void 0;D==="style"?s.d.S(S,typeof m.precedence=="string"?m.precedence:void 0,{crossOrigin:C,integrity:w,fetchPriority:q}):D==="script"&&s.d.X(S,{crossOrigin:C,integrity:w,fetchPriority:q,nonce:typeof m.nonce=="string"?m.nonce:void 0})}},at.preinitModule=function(S,m){if(typeof S=="string")if(typeof m=="object"&&m!==null){if(m.as==null||m.as==="script"){var D=g(m.as,m.crossOrigin);s.d.M(S,{crossOrigin:D,integrity:typeof m.integrity=="string"?m.integrity:void 0,nonce:typeof m.nonce=="string"?m.nonce:void 0})}}else m==null&&s.d.M(S)},at.preload=function(S,m){if(typeof S=="string"&&typeof m=="object"&&m!==null&&typeof m.as=="string"){var D=m.as,C=g(D,m.crossOrigin);s.d.L(S,D,{crossOrigin:C,integrity:typeof m.integrity=="string"?m.integrity:void 0,nonce:typeof m.nonce=="string"?m.nonce:void 0,type:typeof m.type=="string"?m.type:void 0,fetchPriority:typeof m.fetchPriority=="string"?m.fetchPriority:void 0,referrerPolicy:typeof m.referrerPolicy=="string"?m.referrerPolicy:void 0,imageSrcSet:typeof m.imageSrcSet=="string"?m.imageSrcSet:void 0,imageSizes:typeof m.imageSizes=="string"?m.imageSizes:void 0,media:typeof m.media=="string"?m.media:void 0})}},at.preloadModule=function(S,m){if(typeof S=="string")if(m){var D=g(m.as,m.crossOrigin);s.d.m(S,{as:typeof m.as=="string"&&m.as!=="script"?m.as:void 0,crossOrigin:D,integrity:typeof m.integrity=="string"?m.integrity:void 0})}else s.d.m(S)},at.requestFormReset=function(S){s.d.r(S)},at.unstable_batchedUpdates=function(S,m){return S(m)},at.useFormState=function(S,m,D){return p.H.useFormState(S,m,D)},at.useFormStatus=function(){return p.H.useHostTransitionStatus()},at.version="19.2.4",at}var lh;function y0(){if(lh)return qo.exports;lh=1;function f(){if(!(typeof __REACT_DEVTOOLS_GLOBAL_HOOK__>"u"||typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.checkDCE!="function"))try{__REACT_DEVTOOLS_GLOBAL_HOOK__.checkDCE(f)}catch(u){console.error(u)}}return f(),qo.exports=p0(),qo.exports}var ih;function v0(){if(ih)return Vl;ih=1;var f=m0(),u=Su(),c=y0();function s(e){var t="https://react.dev/errors/"+e;if(1<arguments.length){t+="?args[]="+encodeURIComponent(arguments[1]);for(var a=2;a<arguments.length;a++)t+="&args[]="+encodeURIComponent(arguments[a])}return"Minified React error #"+e+"; visit "+t+" for the full message or use the non-minified dev environment for full errors and additional helpful warnings."}function r(e){return!(!e||e.nodeType!==1&&e.nodeType!==9&&e.nodeType!==11)}function h(e){var t=e,a=e;if(e.alternate)for(;t.return;)t=t.return;else{e=t;do t=e,(t.flags&4098)!==0&&(a=t.return),e=t.return;while(e)}return t.tag===3?a:null}function p(e){if(e.tag===13){var t=e.memoizedState;if(t===null&&(e=e.alternate,e!==null&&(t=e.memoizedState)),t!==null)return t.dehydrated}return null}function g(e){if(e.tag===31){var t=e.memoizedState;if(t===null&&(e=e.alternate,e!==null&&(t=e.memoizedState)),t!==null)return t.dehydrated}return null}function S(e){if(h(e)!==e)throw Error(s(188))}function m(e){var t=e.alternate;if(!t){if(t=h(e),t===null)throw Error(s(188));return t!==e?null:e}for(var a=e,n=t;;){var l=a.return;if(l===null)break;var i=l.alternate;if(i===null){if(n=l.return,n!==null){a=n;continue}break}if(l.child===i.child){for(i=l.child;i;){if(i===a)return S(l),e;if(i===n)return S(l),t;i=i.sibling}throw Error(s(188))}if(a.return!==n.return)a=l,n=i;else{for(var o=!1,d=l.child;d;){if(d===a){o=!0,a=l,n=i;break}if(d===n){o=!0,n=l,a=i;break}d=d.sibling}if(!o){for(d=i.child;d;){if(d===a){o=!0,a=i,n=l;break}if(d===n){o=!0,n=i,a=l;break}d=d.sibling}if(!o)throw Error(s(189))}}if(a.alternate!==n)throw Error(s(190))}if(a.tag!==3)throw Error(s(188));return a.stateNode.current===a?e:t}function D(e){var t=e.tag;if(t===5||t===26||t===27||t===6)return e;for(e=e.child;e!==null;){if(t=D(e),t!==null)return t;e=e.sibling}return null}var C=Object.assign,w=Symbol.for("react.element"),q=Symbol.for("react.transitional.element"),Q=Symbol.for("react.portal"),J=Symbol.for("react.fragment"),ie=Symbol.for("react.strict_mode"),xe=Symbol.for("react.profiler"),be=Symbol.for("react.consumer"),ge=Symbol.for("react.context"),me=Symbol.for("react.forward_ref"),ze=Symbol.for("react.suspense"),je=Symbol.for("react.suspense_list"),$=Symbol.for("react.memo"),Ye=Symbol.for("react.lazy"),te=Symbol.for("react.activity"),ae=Symbol.for("react.memo_cache_sentinel"),he=Symbol.iterator;function ue(e){return e===null||typeof e!="object"?null:(e=he&&e[he]||e["@@iterator"],typeof e=="function"?e:null)}var Me=Symbol.for("react.client.reference");function De(e){if(e==null)return null;if(typeof e=="function")return e.$$typeof===Me?null:e.displayName||e.name||null;if(typeof e=="string")return e;switch(e){case J:return"Fragment";case xe:return"Profiler";case ie:return"StrictMode";case ze:return"Suspense";case je:return"SuspenseList";case te:return"Activity"}if(typeof e=="object")switch(e.$$typeof){case Q:return"Portal";case ge:return e.displayName||"Context";case be:return(e._context.displayName||"Context")+".Consumer";case me:var t=e.render;return e=e.displayName,e||(e=t.displayName||t.name||"",e=e!==""?"ForwardRef("+e+")":"ForwardRef"),e;case $:return t=e.displayName||null,t!==null?t:De(e.type)||"Memo";case Ye:t=e._payload,e=e._init;try{return De(e(t))}catch{}}return null}var Ze=Array.isArray,N=u.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE,H=c.__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE,K={pending:!1,data:null,method:null,action:null},ce=[],pe=-1;function v(e){return{current:e}}function z(e){0>pe||(e.current=ce[pe],ce[pe]=null,pe--)}function B(e,t){pe++,ce[pe]=e.current,e.current=t}var G=v(null),P=v(null),M=v(null),Y=v(null);function L(e,t){switch(B(M,t),B(P,e),B(G,null),t.nodeType){case 9:case 11:e=(e=t.documentElement)&&(e=e.namespaceURI)?Sd(e):0;break;default:if(e=t.tagName,t=t.namespaceURI)t=Sd(t),e=xd(t,e);else switch(e){case"svg":e=1;break;case"math":e=2;break;default:e=0}}z(G),B(G,e)}function F(){z(G),z(P),z(M)}function Ce(e){e.memoizedState!==null&&B(Y,e);var t=G.current,a=xd(t,e.type);t!==a&&(B(P,e),B(G,a))}function Ge(e){P.current===e&&(z(G),z(P)),Y.current===e&&(z(Y),wl._currentValue=K)}var He,Et;function Ot(e){if(He===void 0)try{throw Error()}catch(a){var t=a.stack.trim().match(/\n( *(at )?)/);He=t&&t[1]||"",Et=-1<a.stack.indexOf(`
@@ -1320,8 +1456,10 @@ function applyZoom() {
 }
 
 window.addEventListener('localstorage-change', (e) => {
-    if (e.detail.key === 'i18nextLng') {
+    console.log('localStorage change detected:', e.detail.key, '=', e.detail.value);
+    if (e.detail.key === 'i18nextLng' || e.detail.key === 'language' || e.detail.key === 'i18nextLang') {
         window.CURRENT_LANG = e.detail.value.startsWith('en') ? 'en' : 'ko';
+        console.log('Language changed to:', window.CURRENT_LANG);
         applyTranslations();
     } else if (e.detail.key === 'cashcounter_config') {
         try {
@@ -1339,7 +1477,7 @@ window.addEventListener('DOMContentLoaded', () => {
     if (lang && lang.startsWith('en')) {
         window.CURRENT_LANG = 'en';
     }
-    
+
     try {
         const configStr = localStorage.getItem('cashcounter_config');
         if (configStr) {
@@ -1347,9 +1485,20 @@ window.addEventListener('DOMContentLoaded', () => {
             if (config.currency) applyCurrency(config.currency);
         }
     } catch(err) {}
-    
+
     applyTranslations();
     applyZoom();
+
+    // Periodic check to ensure language stays in sync (fallback mechanism)
+    setInterval(() => {
+        const currentLang = localStorage.getItem('i18nextLng');
+        const newLang = currentLang && currentLang.startsWith('en') ? 'en' : 'ko';
+        if (window.CURRENT_LANG !== newLang) {
+            console.log('Periodic check detected language change:', window.CURRENT_LANG, '->', newLang);
+            window.CURRENT_LANG = newLang;
+            applyTranslations();
+        }
+    }, 1000);
 });
 </script>
 
