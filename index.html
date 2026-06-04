@@ -18,8 +18,7 @@
     <title>Cash Counter</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
     <style>@keyframes shake{0%,100%{transform:translateX(0)}10%,30%,50%,70%,90%{transform:translateX(-4px)}20%,40%,60%,80%{transform:translateX(4px)}}.animate-shake{animation:shake .5s ease-in-out}
-/* Fix language dropdown dark mode theme in React SPA */
-.dark [class*="bg-white"][class*="rounded"],
+/* Fix Radix popper dark mode theme in React SPA */
 .dark [data-radix-popper-content-wrapper] [class*="bg-white"],
 .dark [data-radix-popper-content-wrapper] [class*="bg-white"] * {
   background-color: transparent !important;
@@ -84,20 +83,6 @@
 .dark [data-radix-popper-content-wrapper] {
   color: #e2e8f0;
 }
-	/* Fix for the exact button structure you showed me */
-	.dark button.bg-primary-50.dark\:bg-primary-900\/20,
-	.dark button[class*="bg-primary-50"][class*="dark:bg-primary-900/20"] {
-		background-color: #1e293b !important;
-	}
-	/* Also target buttons with bg-primary-50 in dark mode (broader) */
-	.dark button[class*="bg-primary-50"] {
-		background-color: #1e293b !important;
-		color: #e2e8f0 !important;
-	}
-	/* Force all bg-primary-50 elements in dark mode */
-	.dark [class*="bg-primary-50"] {
-		background-color: #1e293b !important;
-	}
 	</style>
 <script>
 /* Runtime fix: patch any Radix Select elements that escape CSS selectors */
@@ -119,6 +104,17 @@
                          bodyBgColor === '#020617' || bodyBgColor === '#0f172a';
 
         var isDark = htmlHasDark || bodyHasDark || isDarkByBg;
+
+        // Ensure documentElement has 'dark' class in dark mode for Tailwind/CSS overrides
+        if (isDark) {
+            if (!document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.add('dark');
+            }
+        } else {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+            }
+        }
 
         console.log('Dark mode detection:');
         console.log('  html.classList.contains("dark"):', htmlHasDark);
