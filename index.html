@@ -83,7 +83,7 @@
 .dark [data-radix-popper-content-wrapper] {
   color: #e2e8f0;
 }
-	</style>
+        </style>
 <script>
 /* Runtime fix: patch any Radix Select elements that escape CSS selectors */
 (function() {
@@ -715,6 +715,22 @@ const originalShowCustomModal = window.showCustomModal;
             amountInput.focus();
         }
 
+        // KOREAN CHOSUNG (INITIAL CONSONANT) EXTRACTION
+        // 한글 음절에서 초성(자음)만 실시간으로 역산하여 추출
+        function convertToChosung(str) {
+            const CHOSUNG = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+            let result = "";
+            for (let i = 0; i < str.length; i++) {
+                const code = str.charCodeAt(i) - 0xAC00;
+                if (code >= 0 && code < 11172) {
+                    result += CHOSUNG[Math.floor(code / 588)];
+                } else {
+                    result += str.charAt(i);
+                }
+            }
+            return result;
+        }
+
         // AUTO-COMPLETE / SEARCH INTERACTIVE DROPDOWN
         function filterMemberSearch(value) {
             // If members DB is not unlocked, skip auto-suggestion entirely (plain input mode)
@@ -730,10 +746,12 @@ const originalShowCustomModal = window.showCustomModal;
                 return;
             }
 
-            // Filter containing string or hangul compatibility matching if possible
-            const matched = state.members.filter(name => 
-                name.toLowerCase().includes(searchTerm)
-            );
+            // 자동완성 필터링 시 일반 검색과 초성 검색 모두 매칭
+            const matched = state.members.filter(name => {
+                const lowerName = name.toLowerCase();
+                const nameChosung = convertToChosung(lowerName);
+                return lowerName.includes(searchTerm) || nameChosung.includes(searchTerm);
+            });
 
             // Add option to create a new person to flow dynamically if not matched
             renderSearchDropdown(matched, searchTerm);
@@ -974,24 +992,36 @@ const originalShowCustomModal = window.showCustomModal;
         }
 
         // SELECT DONATION TYPE BUTTON
-        function selectType(type) {
+        function selectType(type, focusAfterRender) {
             state.selectedType = type;
             if (customTypeInput) {
                 customTypeInput.value = type;
             }
             renderDonationTypeSelection();
+            // Refocus the active type button after DOM rebuild to prevent focus loss
+            if (focusAfterRender) {
+                const buttons = typeSelectorGrid.querySelectorAll('button');
+                buttons.forEach(btn => {
+                    if (btn.textContent.trim().startsWith(type)) {
+                        btn.focus();
+                    }
+                });
+            }
         }
 
         // 헌금 종류 버튼 키보드 제어 (스페이스바로 체크, 엔터로 즉시 제출 및 리셋)
         function handleTypeButtonKeydown(event, type) {
             if (event.key === ' ' || event.key === 'Spacebar') {
                 event.preventDefault();
-                selectType(type);
+                // Pass true to refocus the button after DOM rebuild
+                selectType(type, true);
             } else if (event.key === 'Enter') {
                 event.preventDefault();
                 selectType(type);
                 // 폼 제출 핸들러를 가상 이벤트 방식 대신 신뢰할 수 있게 직접 호출합니다.
-                handleFormSubmit(event);
+                handleFormSubmit(null);
+                // Refocus name input after submission for continuous entry
+                memberInput.focus();
             }
         }
 
