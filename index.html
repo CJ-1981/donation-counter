@@ -18,6 +18,7 @@
     <title>Cash Counter</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
     <style>@keyframes shake{0%,100%{transform:translateX(0)}10%,30%,50%,70%,90%{transform:translateX(-4px)}20%,40%,60%,80%{transform:translateX(4px)}}.animate-shake{animation:shake .5s ease-in-out}
+@keyframes fade-in-out{0%{opacity:0;transform:translate(-50%,-10px)}10%{opacity:1;transform:translate(-50%,0)}90%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,-10px)}}.animate-fade-in-out{animation:fade-in-out 2s ease-in-out}
 /* Fix Radix popper dark mode theme in React SPA */
 .dark [data-radix-popper-content-wrapper] [class*="bg-white"],
 .dark [data-radix-popper-content-wrapper] [class*="bg-white"] * {
@@ -116,25 +117,14 @@
             }
         }
 
-        console.log('Dark mode detection:');
-        console.log('  html.classList.contains("dark"):', htmlHasDark);
-        console.log('  body.classList.contains("dark"):', bodyHasDark);
-        console.log('  body className:', bodyClasses);
-        console.log('  body background-color:', bodyBgColor);
-        console.log('  isDarkByBg:', isDarkByBg);
-        console.log('  FINAL isDark:', isDark);
 
         // Always run DOM debugging to understand the structure
-        console.log('DOM Analysis in', isDark ? 'DARK' : 'LIGHT', 'mode:');
 
         // Debug: Try to find ANY elements that might be dropdown-related
         var allDivs = document.querySelectorAll('div');
         var allButtons = document.querySelectorAll('button');
         var allRoles = document.querySelectorAll('[role="option"], [role="listbox"]');
 
-        console.log('  Total divs:', allDivs.length);
-        console.log('  Total buttons:', allButtons.length);
-        console.log('  Elements with role="option"/"listbox":', allRoles.length);
 
         // Look for any elements that might be dropdown content
         var possibleDropdowns = Array.from(allDivs).filter(function(div) {
@@ -142,19 +132,15 @@
             return className.includes('radix') || className.includes('dropdown') || className.includes('select') || div.hasAttribute('data-radix');
         });
 
-        console.log('  Possible dropdown elements:', possibleDropdowns.length);
 
         // Show first few candidates
         possibleDropdowns.slice(0, 5).forEach(function(el, i) {
-            console.log('  Candidate', i, ':', el.tagName, el.className.substring(0, 100), el.id);
         });
 
         // Only process if we actually found dropdown elements
         var wrappers = document.querySelectorAll('[data-radix-popper-content-wrapper]');
-        console.log('  Radix wrappers found:', wrappers.length);
 
         if (wrappers.length === 0) {
-            console.log('  No wrappers found - checking alternative selectors');
             // Try alternative selectors
             var altSelectors = [
                 '[data-state="open"]',
@@ -165,7 +151,6 @@
             altSelectors.forEach(function(selector) {
                 var found = document.querySelectorAll(selector);
                 if (found.length > 0) {
-                    console.log('  Found', found.length, 'elements with selector:', selector);
                 }
             });
             return;
@@ -176,10 +161,6 @@
         var allButtons = document.querySelectorAll('button');
         var allRoles = document.querySelectorAll('[role="option"], [role="listbox"]');
 
-        console.log('DOM elements found:');
-        console.log('  Total divs:', allDivs.length);
-        console.log('  Total buttons:', allButtons.length);
-        console.log('  Elements with role="option"/"listbox":', allRoles.length);
 
         // Look for any elements that might be dropdown content
         var possibleDropdowns = Array.from(allDivs).filter(function(div) {
@@ -187,27 +168,21 @@
             return className.includes('radix') || className.includes('dropdown') || className.includes('select') || div.hasAttribute('data-radix');
         });
 
-        console.log('  Possible dropdown elements:', possibleDropdowns.length);
 
         // Show first few candidates
         possibleDropdowns.slice(0, 5).forEach(function(el, i) {
-            console.log('  Candidate', i, ':', el.tagName, el.className, el.id);
         });
 
         wrappers.forEach(function(w) {
-            console.log('Found wrapper, processing...');
             var options = w.querySelectorAll('[role="option"], button[class*="bg-primary-50"], button[data-state]');
-            console.log('Found options/buttons:', options.length);
 
             options.forEach(function(el, index) {
-                console.log('Processing element', index, ':', el.tagName, el.className, el.getAttribute('data-state'));
 
                 if (isDark) {
                     // Apply dark mode styles aggressively
                     el.style.setProperty('background-color', '#1e293b', 'important');
                     el.style.setProperty('color', '#e2e8f0', 'important');
                     el.style.setProperty('border-color', '#334155', 'important');
-                    console.log('Applied dark styles to element', index);
                 } else {
                     // Remove dark mode styles - use specific property removal
                     if (el.style.getPropertyValue('background-color') === 'rgb(30, 41, 59)' ||
@@ -218,7 +193,6 @@
                         el.style.getPropertyValue('color') === '#e2e8f0') {
                         el.style.removeProperty('color');
                     }
-                    console.log('Cleaned element', index);
                 }
             });
         });
@@ -239,7 +213,6 @@
     }
     // Only start patching after DOM is fully loaded to prevent errors
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('DOM loaded, starting aggressive patching');
 
         patchRadixDark();
 
@@ -258,7 +231,6 @@
 
     // Safety check in case DOM is already loaded
     if (document.readyState === 'complete' || document.readyState === 'interactive') {
-        console.log('DOM already loaded, starting patchRadixDark immediately');
         setTimeout(patchRadixDark, 100);
     }
 })();
@@ -360,7 +332,7 @@ This invitation expires in 7 days.`,fullInvitationCopied:"Full invitation copied
                             </button>
                         </div>
                         <div class="relative">
-                            <input type="text" id="memberNameInput" autocomplete="off" oninput="filterMemberSearch(this.value)" onkeydown="handleSearchKeydown(event)" placeholder="성명" data-i18n-placeholder="성명" class="w-full text-lg md:text-xl p-4 border-2 border-slate-300 dark:border-slate-600 rounded-xl focus:ring-4 focus:ring-violet-500/20 focus:border-violet-600 outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500 font-medium dark:bg-slate-900 dark:text-slate-100">
+                            <input type="text" id="memberNameInput" autocomplete="off" oninput="filterMemberSearch(this.value)" onkeydown="handleSearchKeydown(event)" onfocus="console.log('[DEBUG] memberInput focused, value:', this.value)" placeholder="성명" data-i18n-placeholder="성명" class="w-full text-lg md:text-xl p-4 border-2 border-slate-300 dark:border-slate-600 rounded-xl focus:ring-4 focus:ring-violet-500/20 focus:border-violet-600 outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500 font-medium dark:bg-slate-900 dark:text-slate-100">
                             <!-- Clear input icon (탭 포커스에서 명시적으로 제외) -->
                             <button type="button" onclick="clearNameInput()" tabindex="-1" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:text-slate-400 p-1">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -562,8 +534,8 @@ const i18nMap = {
     "십일조": "Tithe",
     "주일": "Sunday",
     "감사": "Thanksgiving",
-    "특별": "Special",
-    "선교": "Mission",
+    "특별헌금": "Special Offering",
+    "선교/구제": "Mission/Relief",
     "주일학교": "Sunday School",
     "기록 삭제": "Delete Record",
     "전체 삭제": "Clear All",
@@ -582,8 +554,14 @@ const i18nMap = {
     "새 이름": "New",
     "등록 완료": "Registered",
     '" 신규 등록 및 입력': 'Register & enter',
-    "Please enter the access key.": "액세스 키를 입력해 주십시오.",
-    "Invalid key. Auto-suggestion remains locked.": "유효하지 않은 키입니다. 자동완성이 잠금 상태로 유지됩니다."
+    "액세스 키를 입력해 주십시오.": "Please enter the access key.",
+    "유효하지 않은 키입니다. 자동완성이 잠금 상태로 유지됩니다.": "Invalid key. Auto-suggestion remains locked.",
+    "액세스 키 필요": "Access Key Required",
+    "회원명 자동완성을 잠금 해제하려면 키를 입력하세요.": "Enter the key to unlock member name auto-suggestion.",
+    "키 없이도 일반 텍스트 입력을 사용할 수 있습니다.": "You can still use plain text input without the key.",
+    "액세스 키 입력...": "Enter access key...",
+    "건너뛰기": "Skip",
+    "잠금 해제": "Unlock"
   }
 };
 
@@ -625,16 +603,18 @@ const originalShowCustomModal = window.showCustomModal;
         }
 
         // Default Customizable Donation types - 주일학교 추가
-        const DEFAULT_TYPES_KO = ["십일조", "주일", "감사", "특별", "선교", "주일학교"];
+        const DEFAULT_TYPES_KO = ["주일", "십일조", "감사", "선교/구제", "특별헌금", "주일학교"];
         const DEFAULT_TYPES = DEFAULT_TYPES_KO.map(x => t(x));
 
         // Application State
         let state = {
             members: [],
             donationTypes: [...DEFAULT_TYPES],
-            selectedType: t("십일조"), // default initial selection
+            selectedType: t("주일"), // default initial selection
             logs: [],
-            focusedSearchIndex: -1
+            focusedSearchIndex: -1,
+            nameHistory: [],
+            historyIndex: -1
         };
 
         // DOM Elements
@@ -792,26 +772,93 @@ const originalShowCustomModal = window.showCustomModal;
             searchDropdown.classList.remove('hidden');
         }
 
+        // NAME HISTORY FUNCTIONS
+        function addToNameHistory(name) {
+            console.log('[DEBUG] addToNameHistory:', name, 'current history:', state.nameHistory);
+            // Remove if already exists (to move to top)
+            const existingIndex = state.nameHistory.indexOf(name);
+            if (existingIndex !== -1) {
+                state.nameHistory.splice(existingIndex, 1);
+            }
+            // Add to front
+            state.nameHistory.unshift(name);
+            // Keep only last 20 names
+            if (state.nameHistory.length > 20) {
+                state.nameHistory = state.nameHistory.slice(0, 20);
+            }
+            console.log('[DEBUG] addToNameHistory after:', state.nameHistory);
+        }
+
+        function showNameHistoryDropdown() {
+            console.log('[DEBUG] showNameHistoryDropdown called, history:', state.nameHistory);
+            if (state.nameHistory.length === 0) return;
+
+            searchDropdown.innerHTML = '';
+            state.nameHistory.forEach((name, idx) => {
+                const item = document.createElement('div');
+                item.className = 'dropdown-item px-4 py-3 cursor-pointer bg-white dark:bg-slate-800 hover:bg-violet-50 dark:hover:bg-slate-700 border-l-0 border-b-2 border-b-slate-200 dark:border-b-slate-700 last:border-b-0 transition-colors flex items-center justify-between';
+                item.dataset.value = name;
+                item.dataset.historyIndex = idx;
+
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'font-medium text-slate-700 dark:text-slate-200';
+                nameSpan.textContent = name;
+
+                const countSpan = document.createElement('span');
+                countSpan.className = 'text-xs text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-full';
+                countSpan.textContent = '최근';
+
+                item.appendChild(nameSpan);
+                item.appendChild(countSpan);
+
+                item.addEventListener('click', () => selectMember(name));
+                searchDropdown.appendChild(item);
+            });
+
+            searchDropdown.classList.remove('hidden');
+            state.focusedSearchIndex = -1;
+            console.log('[DEBUG] History dropdown shown, items:', searchDropdown.querySelectorAll('.dropdown-item').length);
+        }
+
         function handleSearchKeydown(event) {
             const items = searchDropdown.querySelectorAll('.dropdown-item');
-            
+            const isDropdownHidden = searchDropdown.classList.contains('hidden');
+            const isInputEmpty = !memberInput.value.trim();
+            console.log('[DEBUG] handleSearchKeydown:', event.key, 'items:', items.length, 'dropdownHidden:', isDropdownHidden, 'inputEmpty:', isInputEmpty, 'inputValue:', memberInput.value);
+
             if (event.key === 'ArrowDown') {
-                if (items.length === 0) return;
+                if ((items.length === 0 || isDropdownHidden) && isInputEmpty) {
+                    // Show history on down arrow if input is empty
+                    console.log('[DEBUG] ArrowDown: showing history dropdown');
+                    event.preventDefault();
+                    showNameHistoryDropdown();
+                    return;
+                }
+                if (items.length === 0 || isDropdownHidden) return;
                 event.preventDefault();
                 state.focusedSearchIndex = (state.focusedSearchIndex + 1) % items.length;
                 highlightSearchItem(items);
             } else if (event.key === 'ArrowUp') {
-                if (items.length === 0) return;
+                if ((items.length === 0 || isDropdownHidden) && isInputEmpty) {
+                    // Show history on up arrow if input is empty
+                    console.log('[DEBUG] ArrowUp: showing history dropdown');
+                    event.preventDefault();
+                    showNameHistoryDropdown();
+                    return;
+                }
+                if (items.length === 0 || isDropdownHidden) return;
                 event.preventDefault();
                 state.focusedSearchIndex = (state.focusedSearchIndex - 1 + items.length) % items.length;
                 highlightSearchItem(items);
             } else if (event.key === 'Enter') {
                 event.preventDefault();
-                if (state.focusedSearchIndex >= 0 && state.focusedSearchIndex < items.length) {
-                    selectMember(items[state.focusedSearchIndex].dataset.value);
-                } else if (items.length > 0) {
+                // Don't select from stale items if dropdown is hidden
+                const effectiveItems = isDropdownHidden ? [] : items;
+                if (state.focusedSearchIndex >= 0 && state.focusedSearchIndex < effectiveItems.length) {
+                    selectMember(effectiveItems[state.focusedSearchIndex].dataset.value);
+                } else if (effectiveItems.length > 0) {
                     // select first element
-                    selectMember(items[0].dataset.value);
+                    selectMember(effectiveItems[0].dataset.value);
                 } else {
                     // No matches in the list, automatically add and select the typed name
                     const query = memberInput.value.trim();
@@ -821,22 +868,41 @@ const originalShowCustomModal = window.showCustomModal;
                 }
             } else if (event.key === 'Escape') {
                 hideSearchDropdown();
+            } else if (event.key === 'Tab') {
+                if (!memberInput.value.trim()) {
+                    event.preventDefault();
+                    memberInput.value = t("무명");
+                    hideSearchDropdown();
+                    amountInput.focus();
+                }
             }
         }
 
         // HIGHLIGHT ACTIVE DROP-DOWN ITEM
         function highlightSearchItem(items) {
+            console.log('[DEBUG] highlightSearchItem called, items:', items.length, 'focusedIndex:', state.focusedSearchIndex);
             items.forEach((item, idx) => {
                 if (idx === state.focusedSearchIndex) {
-                    item.classList.add('bg-violet-50', 'text-violet-900 dark:text-violet-100', 'border-l-4', 'border-violet-600');
+                    console.log('[DEBUG] Highlighting item', idx, 'current classes:', item.className);
+                    item.classList.remove('border-l-0');
+                    item.classList.add('bg-violet-50', 'dark:bg-violet-900/50', 'text-violet-900', 'dark:text-violet-100', 'border-l-4', 'border-l-violet-600', 'dark:border-l-violet-400');
+                    // Use inline style to ensure border color is applied
+                    item.style.borderLeftColor = '#8b5cf6';
+                    item.style.borderLeftWidth = '4px';
+                    console.log('[DEBUG] After add, classes:', item.className);
                     item.scrollIntoView({ block: 'nearest' });
                 } else {
-                    item.classList.remove('bg-violet-50', 'text-violet-900 dark:text-violet-100', 'border-l-4', 'border-violet-600');
+                    item.classList.remove('bg-violet-50', 'dark:bg-violet-900/50', 'text-violet-900', 'dark:text-violet-100', 'border-l-4', 'border-l-violet-600', 'dark:border-l-violet-400');
+                    item.classList.add('border-l-0');
+                    // Clear inline styles
+                    item.style.borderLeftColor = '';
+                    item.style.borderLeftWidth = '';
                 }
             });
         }
 
         function selectMember(name) {
+            console.log('[DEBUG] selectMember called with:', name, 'current input value before:', memberInput.value);
             memberInput.value = name;
             hideSearchDropdown();
             amountInput.focus();
@@ -872,7 +938,7 @@ const originalShowCustomModal = window.showCustomModal;
             const errorEl = document.getElementById('keyError');
 
             if (!key) {
-                errorEl.textContent = t("Please enter the access key.");
+                errorEl.textContent = t("액세스 키를 입력해 주십시오.");
                 errorEl.classList.remove('hidden');
                 return;
             }
@@ -896,7 +962,7 @@ const originalShowCustomModal = window.showCustomModal;
                 updateUnlockUI(true);
                 closeKeyUnlockModal();
             } else {
-                errorEl.textContent = t("Invalid key. Auto-suggestion remains locked.");
+                errorEl.textContent = t("유효하지 않은 키입니다. 자동완성이 잠금 상태로 유지됩니다.");
                 errorEl.classList.remove('hidden');
                 keyField.value = '';
                 keyField.focus();
@@ -946,6 +1012,7 @@ const originalShowCustomModal = window.showCustomModal;
         });
 
         function hideSearchDropdown() {
+            console.log('[DEBUG] hideSearchDropdown called');
             searchDropdown.classList.add('hidden');
             state.focusedSearchIndex = -1;
         }
@@ -1032,8 +1099,35 @@ const originalShowCustomModal = window.showCustomModal;
             renderDonationTypeSelection();
         }
 
+        // TOAST NOTIFICATION FUNCTION
+        function showToast(name) {
+            // Remove existing toast if any
+            const existingToast = document.getElementById('nameToast');
+            if (existingToast) existingToast.remove();
+
+            const toast = document.createElement('div');
+            toast.id = 'nameToast';
+            toast.className = 'fixed top-20 left-1/2 -translate-x-1/2 z-[300] bg-emerald-600 text-white px-4 py-2 rounded-xl shadow-lg text-sm font-medium animate-fade-in-out flex items-center gap-2';
+            toast.innerHTML = `
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                </svg>
+                <span>${name}</span>
+            `;
+
+            document.body.appendChild(toast);
+
+            // Remove after 2 seconds
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 2000);
+        }
+
         // FORM SUBMISSION (ADD LOG - 타임스탬프 정보 제외)
         function handleFormSubmit(e) {
+            console.log('[DEBUG] handleFormSubmit called, memberInput.value:', memberInput.value);
             if (e) e.preventDefault();
             const name = memberInput.value.trim();
             const amountVal = parseFloat(amountInput.value);
@@ -1065,6 +1159,11 @@ const originalShowCustomModal = window.showCustomModal;
             // Add directly into our session state
             state.logs.push(record);
 
+            // Add to name history (excluding "무명")
+            if (name !== t("무명")) {
+                addToNameHistory(name);
+            }
+
             // If the name is brand new, append to temporary local member lists (excluding default "무명")
             if (name !== t("무명") && !state.members.includes(name)) {
                 state.members.push(name);
@@ -1075,11 +1174,19 @@ const originalShowCustomModal = window.showCustomModal;
             renderLogsTable();
             renderBreakdowns();
 
+            // Hide search dropdown to prevent history items from interfering
+            console.log('[DEBUG] Calling hideSearchDropdown');
+            hideSearchDropdown();
+
             // Clear entry inputs only, preserve type for continuous input
             memberInput.value = '';
             amountInput.value = '';
             // 입력 완료 후 포커스를 성명 필드로 강제 복원
+            console.log('[DEBUG] Setting focus to memberInput, current value:', memberInput.value);
             memberInput.focus();
+
+            // Show toast notification for new entry
+            showToast(name);
         }
 
         // RENDER LOGGED ROWS TABLE
@@ -1445,6 +1552,11 @@ function applyTranslations() {
         renderLogsTable();
         renderBreakdowns();
     }
+
+    // Update unlock status badge translation
+    if(typeof updateUnlockUI === 'function' && typeof membersUnlocked !== 'undefined') {
+        updateUnlockUI(membersUnlocked);
+    }
 }
 
 function applyCurrency(currencyCode) {
@@ -1482,10 +1594,8 @@ function applyZoom() {
 }
 
 window.addEventListener('localstorage-change', (e) => {
-    console.log('localStorage change detected:', e.detail.key, '=', e.detail.value);
     if (e.detail.key === 'i18nextLng' || e.detail.key === 'language' || e.detail.key === 'i18nextLang') {
         window.CURRENT_LANG = e.detail.value.startsWith('en') ? 'en' : 'ko';
-        console.log('Language changed to:', window.CURRENT_LANG);
         applyTranslations();
     } else if (e.detail.key === 'cashcounter_config') {
         try {
@@ -1520,7 +1630,6 @@ window.addEventListener('DOMContentLoaded', () => {
         const currentLang = localStorage.getItem('i18nextLng');
         const newLang = currentLang && currentLang.startsWith('en') ? 'en' : 'ko';
         if (window.CURRENT_LANG !== newLang) {
-            console.log('Periodic check detected language change:', window.CURRENT_LANG, '->', newLang);
             window.CURRENT_LANG = newLang;
             applyTranslations();
         }
@@ -1538,16 +1647,19 @@ window.addEventListener('DOMContentLoaded', () => {
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                 </svg>
             </div>
-            <h2 class="text-xl font-bold text-slate-800 dark:text-slate-100">Access Key Required</h2>
-            <p class="text-sm text-slate-500 dark:text-slate-400">Enter the key to unlock member name auto-suggestion.<br>You can still use plain text input without the key.</p>
+            <h2 data-i18n="액세스 키 필요" class="text-xl font-bold text-slate-800 dark:text-slate-100">액세스 키 필요</h2>
+            <p class="text-sm text-slate-500 dark:text-slate-400">
+                <span data-i18n="회원명 자동완성을 잠금 해제하려면 키를 입력하세요.">회원명 자동완성을 잠금 해제하려면 키를 입력하세요.</span><br>
+                <span data-i18n="키 없이도 일반 텍스트 입력을 사용할 수 있습니다.">키 없이도 일반 텍스트 입력을 사용할 수 있습니다.</span>
+            </p>
         </div>
         <div class="key-input-wrap space-y-3">
-            <input id="keyInputField" type="password" placeholder="Enter access key..." class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent text-center text-lg tracking-widest font-mono" autocomplete="off" />
+            <input id="keyInputField" type="password" data-i18n-placeholder="액세스 키 입력..." placeholder="액세스 키 입력..." class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent text-center text-lg tracking-widest font-mono" autocomplete="off" />
             <p id="keyError" class="hidden text-sm text-red-600 dark:text-red-400 text-center font-medium"></p>
         </div>
         <div class="flex gap-3">
-            <button onclick="closeKeyUnlockModal()" class="flex-1 px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl text-slate-600 dark:text-slate-300 font-semibold hover:bg-slate-100 dark:hover:bg-slate-700 transition">Skip</button>
-            <button onclick="submitKeyUnlock()" class="flex-1 px-4 py-3 bg-violet-600 hover:bg-violet-700 text-white rounded-xl font-semibold transition shadow-lg shadow-violet-600/20">Unlock</button>
+            <button onclick="closeKeyUnlockModal()" data-i18n="건너뛰기" class="flex-1 px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl text-slate-600 dark:text-slate-300 font-semibold hover:bg-slate-100 dark:hover:bg-slate-700 transition">건너뛰기</button>
+            <button onclick="submitKeyUnlock()" data-i18n="잠금 해제" class="flex-1 px-4 py-3 bg-violet-600 hover:bg-violet-700 text-white rounded-xl font-semibold transition shadow-lg shadow-violet-600/20">잠금 해제</button>
         </div>
     </div>
 </div>
