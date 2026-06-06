@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+
 import { getCurrencyEmoji } from '../config/currencyDenominations'
 import { formatCurrencyAmount } from '../utils/denominationUtils'
 
@@ -11,8 +11,6 @@ interface DenominationControlsProps {
 }
 
 function DenominationControls({ count, onChange, onInput, color, denomination }: DenominationControlsProps) {
-  const [inputValue, setInputValue] = useState(count === 0 ? '' : count.toString())
-
   const colorClasses = {
     teal: {
       minus: 'bg-red-500 hover:bg-red-600 disabled:bg-red-300',
@@ -28,15 +26,6 @@ function DenominationControls({ count, onChange, onInput, color, denomination }:
     },
   }
 
-  const prevCountRef = useRef(count)
-  useEffect(() => {
-    if (prevCountRef.current !== count) {
-      const newValue = count === 0 ? '' : count.toString()
-      setInputValue(newValue)
-      prevCountRef.current = count
-    }
-  }, [count])
-
   return (
     <div className="flex flex-col gap-1 items-center">
       <div className={`p-1 rounded-md border ${colorClasses[color].container} w-full`}>
@@ -48,13 +37,13 @@ function DenominationControls({ count, onChange, onInput, color, denomination }:
           id={`denomination-${denomination}-${color}`}
           name={`denomination-${denomination}-${color}`}
           className={`text-center font-semibold w-full border rounded focus:outline-none focus:ring-2 py-1 px-2 ${colorClasses[color].input}`}
-          value={inputValue}
+          key={count} // Force re-render on external update
+          defaultValue={count === 0 ? '' : count}
           placeholder="0"
-          onChange={(e) => setInputValue(e.target.value)}
-          onBlur={() => onInput(Math.max(0, Math.min(999, parseInt(inputValue) || 0)))}
+          onBlur={(e) => onInput(Math.max(0, Math.min(999, parseInt(e.target.value) || 0)))}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
-              onInput(Math.max(0, Math.min(999, parseInt(inputValue) || 0)))
+              onInput(Math.max(0, Math.min(999, parseInt(e.currentTarget.value) || 0)))
               e.currentTarget.blur()
             }
           }}

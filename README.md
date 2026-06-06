@@ -33,7 +33,7 @@ Church donation tracking web app with two main features: **Cash Counter** and **
 
 ## Architecture
 
-```
+```text
 donation-counter/
 ├── src/                # React source code
 │   ├── components/     # Reusable UI components
@@ -82,7 +82,7 @@ npm install
 npm run dev
 
 # Build for production and inject encrypted members
-MEMBERS='[{"name":"John"}]' MEMBER_KEY='secret' npm run build
+MEMBERS='["John"]' MEMBER_KEY='secret' npm run build
 
 # Preview production build locally
 npm run preview

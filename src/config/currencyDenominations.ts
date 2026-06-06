@@ -184,7 +184,7 @@ export function getCurrencyInfo(currencyCode: string): CurrencyDenominations {
  * @returns Currency symbol (e.g., '$', '', '£')
  */
 export function getCurrencySymbol(currencyCode: string): string {
-  return CURRENCY_DENOMINATIONS[currencyCode]?.symbol || currencyCode
+  return CURRENCY_DENOMINATIONS[currencyCode]?.symbol ?? currencyCode
 }
 
 /**

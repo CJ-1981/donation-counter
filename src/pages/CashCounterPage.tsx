@@ -118,6 +118,7 @@ export default function CashCounterPage() {
     setConfig(prevConfig => {
       const updatedConfig = typeof newConfig === 'function' ? newConfig(prevConfig) : newConfig
       localStorage.setItem('cashcounter_config', JSON.stringify(updatedConfig))
+      window.dispatchEvent(new Event('cashcounter_config_changed'))
       return updatedConfig
     })
   }, [])
@@ -419,7 +420,7 @@ export default function CashCounterPage() {
     }
 
     lines.push('---')
-    lines.push('### Excel Export (TSV)')
+    lines.push(`### ${t('cashCounter.excelExport')}`)
     
     // Generate TSV for all denominations
     const allDenominations = getDenominations(config.currency)

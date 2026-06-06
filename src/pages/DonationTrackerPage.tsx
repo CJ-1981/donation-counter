@@ -41,10 +41,15 @@ export default function DonationTrackerPage() {
         if (Array.isArray(parsed) && parsed.length > 0) return parsed
       }
     } catch { /* ignore */ }
-    return DEFAULT_TYPES_KEYS.map(x => t(x))
-  }, [t])
+    return DEFAULT_TYPES_KEYS
+  }, [])
   
-  const [selectedType, setSelectedType] = useState<string>(donationTypes[0] || t('tracker.sunday'))
+  const getDisplayType = (typeKey: string) => {
+    // If it's one of the default keys, translate it. Otherwise, it's a custom type, return as is.
+    return DEFAULT_TYPES_KEYS.includes(typeKey) ? t(typeKey) : typeKey
+  }
+  
+  const [selectedType, setSelectedType] = useState<string>(donationTypes[0] || DEFAULT_TYPES_KEYS[0])
 
   useEffect(() => {
     setSelectedType(prev => {
@@ -54,7 +59,7 @@ export default function DonationTrackerPage() {
   }, [donationTypes])
 
   const [customType, setCustomType] = useState('')
-  const [currencyConfig] = useState(() => {
+  const [currencyConfig, setCurrencyConfig] = useState(() => {
     try {
       const stored = localStorage.getItem('cashcounter_config')
       if (stored) {
@@ -66,7 +71,24 @@ export default function DonationTrackerPage() {
     } catch { /* ignore */ }
     return CURRENCY_DENOMINATIONS['EUR']
   })
-  const displaySymbol = currencyConfig.symbol || currencyConfig.code
+
+  useEffect(() => {
+    const handleConfigChange = () => {
+      try {
+        const stored = localStorage.getItem('cashcounter_config')
+        if (stored) {
+          const parsed = JSON.parse(stored)
+          if (parsed.currency && CURRENCY_DENOMINATIONS[parsed.currency]) {
+            setCurrencyConfig(CURRENCY_DENOMINATIONS[parsed.currency])
+          }
+        }
+      } catch { /* ignore */ }
+    }
+    window.addEventListener('cashcounter_config_changed', handleConfigChange)
+    return () => window.removeEventListener('cashcounter_config_changed', handleConfigChange)
+  }, [])
+
+
   
   const [logs, setLogs] = useState<LogEntry[]>([])
   const [nameInput, setNameInput] = useState('')
@@ -138,7 +160,7 @@ export default function DonationTrackerPage() {
       const decrypted = CryptoJS.AES.decrypt(encrypted, keyInput).toString(CryptoJS.enc.Utf8)
       if (decrypted) {
         const parsed = JSON.parse(decrypted)
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        if (Array.isArray(parsed) && parsed.length > 0 && parsed.every(item => typeof item === 'string')) {
           setMembers(parsed)
           setIsUnlocked(true)
           setShowKeyModal(false)
@@ -257,7 +279,7 @@ export default function DonationTrackerPage() {
     } else if (e.key === 'Tab') {
       if (!nameInput.trim()) {
         e.preventDefault()
-        setNameInput(t('tracker.anonymousRaw'))
+        setNameInput('__anonymous__')
         setShowDropdown(false)
         document.getElementById('donationAmount')?.focus()
       }
@@ -287,14 +309,14 @@ export default function DonationTrackerPage() {
 
     const newLog: LogEntry = {
       id: crypto.randomUUID(),
-      name,
+      name: name,
       amount: amountVal,
       type: finalType
     }
 
     setLogs(prev => [...prev, newLog])
     
-    if (name !== t('tracker.anonymousRaw')) {
+    if (name !== '__anonymous__') {
       const updatedHistory = [name, ...nameHistory.filter(n => n !== name)].slice(0, 10)
       setNameHistory(updatedHistory)
       localStorage.setItem('church_name_history', JSON.stringify(updatedHistory))
@@ -309,7 +331,10 @@ export default function DonationTrackerPage() {
     setAmountInput('')
     setShowDropdown(false)
 
-    setToastMessage(name)
+    const displayName = name === '__anonymous__' ? t('tracker.anonymousRaw') : name
+    const displayType = getDisplayType(finalType)
+    const displayAmount = amountVal.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    setToastMessage(`${displayName} • ${displayType} • ${displayAmount}`)
     setTimeout(() => setToastMessage(null), 2000)
 
     // Focus name input for continuous rapid entry
@@ -332,9 +357,10 @@ export default function DonationTrackerPage() {
   const deleteRow = (id: string) => {
     const record = logs.find(l => l.id === id)
     if (!record) return
+    const displayName = record.name === '__anonymous__' ? t('tracker.anonymousRaw') : record.name
     showModal(
       t('tracker.deleteRecord'),
-      `"${record.name}"님의 ${record.amount.toFixed(2)} (${record.type}) 기록을 삭제하시겠습니까?`,
+      `"${displayName}"님의 ${record.amount.toFixed(2)} (${record.type}) 기록을 삭제하시겠습니까?`,
       true,
       () => {
         setLogs(prev => prev.filter(l => l.id !== id))
@@ -357,11 +383,23 @@ export default function DonationTrackerPage() {
     )
   }
 
+  const escapeSpreadsheetCell = (val: string) => {
+    if (/^[=+\-@]/.test(val)) {
+      return `'${val}`
+    }
+    return val
+  }
+
   const exportToCSV = () => {
     if (logs.length === 0) return
     const csvRows = [[t('tracker.name'), t('tracker.amount'), t('tracker.type')]]
     logs.forEach(log => {
-      csvRows.push([log.name, log.amount.toFixed(2), log.type])
+      const displayName = log.name === '__anonymous__' ? t('tracker.anonymousRaw') : log.name
+      csvRows.push([
+        escapeSpreadsheetCell(displayName), 
+        log.amount.toFixed(2), 
+        escapeSpreadsheetCell(getDisplayType(log.type))
+      ])
     })
     const csvContent = csvRows.map(row => 
       row.map(cell => {
@@ -387,7 +425,14 @@ export default function DonationTrackerPage() {
   const copyToClipboard = () => {
     if (logs.length === 0) return
     const headers = [t('tracker.name'), t('tracker.amount'), t('tracker.type')].join("\t")
-    const rows = logs.map(log => [log.name, log.amount.toFixed(2), log.type].join("\t"))
+    const rows = logs.map(log => {
+      const displayName = log.name === '__anonymous__' ? t('tracker.anonymousRaw') : log.name
+      return [
+        escapeSpreadsheetCell(displayName), 
+        log.amount.toFixed(2), 
+        escapeSpreadsheetCell(getDisplayType(log.type))
+      ].join("\t")
+    })
     const tsvContent = [headers, ...rows].join("\n")
 
     navigator.clipboard.writeText(tsvContent).then(() => {
@@ -420,7 +465,7 @@ export default function DonationTrackerPage() {
               <div className="flex justify-between items-center mb-1">
                 <label className="block text-lg font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
                   <span>{t('tracker.name')}</span>
-                  <button type="button" onClick={() => setShowKeyModal(true)} tabIndex={-1} className="text-slate-400 hover:text-violet-600 dark:hover:text-violet-400 p-0.5 rounded transition-all hover:bg-violet-50 dark:hover:bg-violet-900/30">
+                  <button type="button" onClick={() => setShowKeyModal(true)} className="text-slate-400 hover:text-violet-600 dark:hover:text-violet-400 p-0.5 rounded transition-all hover:bg-violet-50 dark:hover:bg-violet-900/30">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       {isUnlocked ? (
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
@@ -441,7 +486,7 @@ export default function DonationTrackerPage() {
                     </span>
                   )}
                 </label>
-                <button type="button" onClick={() => { setNameInput(t('tracker.anonymousRaw')); setShowDropdown(false) }} tabIndex={-1} className="bg-violet-100 dark:bg-violet-900/40 hover:bg-violet-200 dark:hover:bg-violet-900/60 active:scale-[0.97] text-violet-950 dark:text-violet-100 text-sm font-extrabold px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 touch-target">
+                <button type="button" onClick={() => { setNameInput('__anonymous__'); setShowDropdown(false) }} className="bg-violet-100 dark:bg-violet-900/40 hover:bg-violet-200 dark:hover:bg-violet-900/60 active:scale-[0.97] text-violet-950 dark:text-violet-100 text-sm font-extrabold px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 touch-target">
                   <span>{t('tracker.anonymous')}</span>
                 </button>
               </div>
@@ -449,13 +494,17 @@ export default function DonationTrackerPage() {
                 <input 
                   type="text" 
                   id="memberNameInput"
-                  value={nameInput}
-                  onChange={(e) => setNameInput(e.target.value)}
+                  value={nameInput === '__anonymous__' ? t('tracker.anonymousRaw') : nameInput}
+                  onChange={(e) => {
+                    const val = e.target.value
+                    setNameInput(val === t('tracker.anonymousRaw') ? '__anonymous__' : val)
+                    setShowDropdown(true)
+                  }}
                   onKeyDown={handleSearchKeydown}
                   placeholder={t('tracker.name')} 
                   className="w-full text-lg md:text-xl p-4 border-2 border-slate-300 dark:border-slate-600 rounded-xl focus:ring-4 focus:ring-violet-500/20 focus:border-violet-600 outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500 font-medium dark:bg-slate-900 dark:text-slate-100"
                 />
-                <button type="button" onClick={() => { setNameInput(''); setShowDropdown(false) }} tabIndex={-1} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1">
+                <button type="button" onClick={() => { setNameInput(''); setShowDropdown(false) }} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
               </div>
@@ -492,7 +541,7 @@ export default function DonationTrackerPage() {
             {/* AMOUNT INPUT */}
             <div>
               <label className="block text-lg font-bold text-slate-700 dark:text-slate-300 mb-1">
-                <span>{t('tracker.amount')}</span> (<span className="currency-sym">{displaySymbol}</span>)
+                <span>{t('tracker.amount')}</span> (<span className="currency-sym">{currencyConfig.code} - {currencyConfig.name}</span>)
               </label>
               <div className="relative">
                 <input 
@@ -507,7 +556,7 @@ export default function DonationTrackerPage() {
                   onChange={e => setAmountInput(e.target.value)}
                   className="w-full text-2xl font-bold p-4 pr-12 border-2 border-slate-300 dark:border-slate-600 rounded-xl focus:ring-4 focus:ring-violet-500/20 focus:border-violet-600 outline-none transition-all placeholder:text-slate-300 dark:bg-slate-900 dark:text-slate-100"
                 />
-                <button type="button" onClick={() => setAmountInput('')} tabIndex={-1} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1">
+                <button type="button" onClick={() => setAmountInput('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
               </div>
@@ -550,7 +599,7 @@ export default function DonationTrackerPage() {
                         : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:bg-slate-800 bg-white dark:bg-slate-800'
                       }`}
                     >
-                      <span className="truncate">{type}</span>
+                      <span className="truncate">{getDisplayType(type)}</span>
                       {isActive && <span className="text-violet-600 font-black text-lg ml-1 shrink-0">✓</span>}
                     </button>
                   )
@@ -615,7 +664,7 @@ export default function DonationTrackerPage() {
                 <div key={type} className="flex items-center justify-between text-sm font-semibold py-1.5 hover:bg-slate-50 dark:hover:bg-slate-900/50 rounded px-1 transition duration-150">
                   <span className="truncate text-slate-700 dark:text-slate-300 flex items-center gap-1.5 pr-2">
                     <span className={`w-2 h-2 rounded-full ${donationTypes.includes(type) ? 'bg-violet-600' : 'bg-amber-500'} shrink-0`}></span>
-                    <span className="truncate">{type}</span>
+                    <span className="truncate">{getDisplayType(type)}</span>
                   </span>
                   <span className="text-slate-900 dark:text-slate-100 font-black text-xl flex items-center justify-end">
                     <span>{subTotal.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
@@ -660,12 +709,12 @@ export default function DonationTrackerPage() {
                 ) : (
                   [...logs].reverse().map(log => (
                     <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/50 transition border-b border-slate-100 dark:border-slate-700 group">
-                      <td className="py-3 px-2 font-bold text-slate-800 dark:text-slate-200 break-all">
-                        <div className="truncate max-w-[120px] sm:max-w-none">{log.name}</div>
+                      <td className="py-3 px-2 font-medium text-slate-900 dark:text-slate-100 text-sm sm:text-lg">
+                        <div className="truncate max-w-[120px] sm:max-w-none">{log.name === '__anonymous__' ? t('tracker.anonymousRaw') : log.name}</div>
                       </td>
                       <td className="py-3 px-2 text-slate-600 dark:text-slate-400 font-semibold text-sm">
-                        <span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs sm:text-sm font-bold border border-slate-200 dark:border-slate-700 inline-block max-w-[110px] truncate" title={log.type}>
-                          {log.type}
+                        <span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs sm:text-sm font-bold border border-slate-200 dark:border-slate-700 inline-block max-w-[110px] truncate" title={getDisplayType(log.type)}>
+                          {getDisplayType(log.type)}
                         </span>
                       </td>
                       <td className="py-3 px-2 text-right font-black text-slate-900 dark:text-slate-100 text-sm sm:text-lg">

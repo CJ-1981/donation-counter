@@ -367,7 +367,8 @@
     "denomination": "Denomination",
     "confirmCurrencyChange": "Confirm Currency Change",
     "currencyChangeWarning": "You have denomination counts in the current currency. Changing currency will reset all denomination counts to zero.",
-    "changeCurrencyAndReset": "Change Currency & Reset"
+    "changeCurrencyAndReset": "Change Currency & Reset",
+    "excelExport": "Excel Export (TSV)"
   },
   "qr": {
     "show": "Show QR Code",

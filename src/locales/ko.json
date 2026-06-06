@@ -367,7 +367,8 @@
     "denomination": "화폐",
     "confirmCurrencyChange": "화폐 변경 확인",
     "currencyChangeWarning": "현재 화폐 단위로 계수된 데이터가 있습니다. 화폐 단위를 변경하면 모든 계수 데이터가 0으로 초기화됩니다.",
-    "changeCurrencyAndReset": "화폐 변경 및 초기화"
+    "changeCurrencyAndReset": "화폐 변경 및 초기화",
+    "excelExport": "엑셀 붙여넣기용"
   },
   "qr": {
     "show": "QR 코드 표시",
