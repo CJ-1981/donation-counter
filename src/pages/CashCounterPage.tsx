@@ -726,23 +726,23 @@ export default function CashCounterPage() {
             <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-md w-full p-6 border border-slate-200 dark:border-slate-700">
               <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2">
                 <span>⚠️</span>
-                <span>Confirm Currency Change</span>
+                <span>{t('cashCounter.confirmCurrencyChange')}</span>
               </h2>
               <p className="text-slate-700 dark:text-slate-300 mb-6">
-                You have denomination counts in the current currency. Changing currency will reset all denomination counts to zero.
+                {t('cashCounter.currencyChangeWarning')}
               </p>
               <div className="flex gap-3 justify-end">
                 <button
                   onClick={handleCurrencyChangeCancel}
                   className="px-4 py-2 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors font-medium"
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
                 <button
                   onClick={handleCurrencyChangeConfirm}
                   className="px-4 py-2 rounded-lg bg-red-600 dark:bg-red-700 hover:bg-red-700 dark:hover:bg-red-600 text-white transition-colors font-medium"
                 >
-                  Change Currency & Reset
+                  {t('cashCounter.changeCurrencyAndReset')}
                 </button>
               </div>
             </div>
