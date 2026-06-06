@@ -90,7 +90,21 @@ export default function DonationTrackerPage() {
 
 
   
-  const [logs, setLogs] = useState<LogEntry[]>([])
+  const [logs, setLogs] = useState<LogEntry[]>(() => {
+    try {
+      const stored = localStorage.getItem('church_donation_logs')
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        if (Array.isArray(parsed)) return parsed
+      }
+    } catch { /* ignore */ }
+    return []
+  })
+
+  useEffect(() => {
+    localStorage.setItem('church_donation_logs', JSON.stringify(logs))
+  }, [logs])
+
   const [nameInput, setNameInput] = useState('')
   const [amountInput, setAmountInput] = useState('')
   const [nameHistory, setNameHistory] = useState<string[]>(() => {
@@ -188,20 +202,20 @@ export default function DonationTrackerPage() {
   }
 
   const query = nameInput.trim()
-  const searchResults = (() => {
+  const searchResults = useMemo(() => {
     if (query === '' || query === '__anonymous__' || query === t('tracker.anonymousRaw')) {
       return nameHistory.map(m => ({ name: m, matches: <>{m}</>, type: 'history' }))
     }
     if (!isUnlocked) return []
-    
+
     const queryLower = query.toLowerCase()
     const queryChosung = getChosung(queryLower)
-    
+
     return members
       .map((member): {name: string, matches: React.ReactNode, type: string} | null => {
         const memberLower = member.toLowerCase()
         const memberChosung = getChosung(memberLower)
-        
+
         let matchIdx = -1
         let matchLen = 0
 
@@ -229,7 +243,7 @@ export default function DonationTrackerPage() {
       })
       .filter((x): x is {name: string, matches: React.ReactNode, type: string} => x !== null)
       .slice(0, 5)
-  })()
+  }, [query, isUnlocked, members, nameHistory, t])
 
   // @MX:NOTE: Synchronize derived UI state (dropdown visibility) based on query and results.
   // We intentionally omit `setShowDropdown` and `setFocusedSearchIndex` from dependencies 
@@ -275,7 +289,7 @@ export default function DonationTrackerPage() {
       } else if (showDropdown && searchResults.length > 0) {
         setNameInput(searchResults[0].name)
       } else if (!nameInput.trim()) {
-        setNameInput(t('tracker.anonymousRaw'))
+        setNameInput('__anonymous__')
       } else {
         setNameInput(nameInput.trim())
       }

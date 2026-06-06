@@ -82,13 +82,78 @@ const createEmptyState = (currency: string): CashCounterState => ({
 export default function CashCounterPage() {
   const { t, i18n } = useTranslation()
 
-  // State
-  const [state, setState] = useState<CashCounterState>(() => createEmptyState('EUR'))
+  // State with lazy initialization from localStorage
+  const [config, setConfig] = useState<Config>(() => {
+    const storedConfig = localStorage.getItem('cashcounter_config')
+    if (storedConfig) {
+      try {
+        const parsed = JSON.parse(storedConfig)
+        if (parsed && typeof parsed.currency === 'string') {
+          return parsed
+        }
+      } catch (err) {
+        console.error('Error loading config:', err)
+      }
+    }
+    return { currency: 'EUR', targetAmount: 0 }
+  })
+
+  const [state, setState] = useState<CashCounterState>(() => {
+    const storageKey = 'cashcounter_standalone'
+    let initialCurrency = config.currency
+
+    try {
+      const stored = localStorage.getItem(storageKey)
+      if (stored) {
+        const data: StoredCashData = JSON.parse(stored)
+        const today = getLocalDateString()
+
+        // Remove stale data from previous day
+        if (data.lastDate !== today) {
+          localStorage.removeItem(storageKey)
+          return createEmptyState(initialCurrency)
+        }
+
+        // Handle version migration
+        if (data.version === 3) {
+          if (typeof data.anonymous === 'object' && data.anonymous !== null &&
+            typeof data.namedCounts === 'object' && data.namedCounts !== null) {
+            return {
+              anonymous: data.anonymous,
+              namedCounts: data.namedCounts,
+            }
+          }
+          // Invalid V3 payload
+          console.error('Invalid V3 payload structure, resetting to empty state')
+          return createEmptyState(data.currency || initialCurrency)
+        } else if (data.version === 2) {
+          // Migrate V2 to V3
+          console.log('Migrating V2 to V3 format')
+          const v3Data: StoredCashData = {
+            version: 3,
+            anonymous: data.anonymous,
+            namedCounts: data.namedCounts,
+            lastDate: data.lastDate,
+            currency: 'EUR',
+          }
+          localStorage.setItem(storageKey, JSON.stringify(v3Data))
+          return {
+            anonymous: data.anonymous,
+            namedCounts: data.namedCounts,
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Error loading cash counter data:', err)
+    }
+
+    return createEmptyState(initialCurrency)
+  })
+
   const [currencyChange, setCurrencyChange] = useState<CurrencyChangeState>({
     showCurrencyConfirm: false,
     pendingCurrency: null
   })
-  const [config, setConfig] = useState<Config>({ currency: 'EUR', targetAmount: 0 })
   const [copySuccess, setCopySuccess] = useState(false)
   const [copyError, setCopyError] = useState(false)
   const [showConfig, setShowConfig] = useState(false)
@@ -96,22 +161,8 @@ export default function CashCounterPage() {
 
   // Refs for localStorage save optimization
   const isInitialRender = useRef(true)
-  const previousStateRef = useRef<CashCounterState>(createEmptyState('EUR'))
+  const previousStateRef = useRef<CashCounterState>(state)
   const configRef = useRef<Config>(config)
-
-  // Load config from localStorage (run once)
-  useEffect(() => {
-    const storedConfig = localStorage.getItem('cashcounter_config')
-    if (storedConfig) {
-      try {
-        const parsed = JSON.parse(storedConfig)
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setConfig(parsed)
-      } catch (err) {
-        console.error('Error loading config:', err)
-      }
-    }
-  }, [])
 
   // Keep configRef in sync with config for use in cleanup closures
   useEffect(() => {
@@ -127,74 +178,6 @@ export default function CashCounterPage() {
       window.dispatchEvent(new Event('cashcounter_config_changed'))
       return updatedConfig
     })
-  }, [])
-
-  // Load data from localStorage (run once after component mount)
-  useEffect(() => {
-    const storageKey = 'cashcounter_standalone'
-    try {
-      const stored = localStorage.getItem(storageKey)
-      if (stored) {
-        const data: StoredCashData = JSON.parse(stored)
-
-        // Check if date has changed
-        const today = getLocalDateString()
-        if (data.lastDate !== today) {
-          localStorage.removeItem(storageKey)
-          // eslint-disable-next-line react-hooks/set-state-in-effect
-          setState(createEmptyState(data.currency || 'EUR'))
-          return
-        }
-
-        // Check version and migrate if needed
-        if (data.version === 3) {
-          // V3 format - validate and load directly
-          if (typeof data.anonymous === 'object' && data.anonymous !== null &&
-            typeof data.namedCounts === 'object' && data.namedCounts !== null) {
-            const loadedCurrency = data.currency || 'EUR'
-            setState({
-              anonymous: data.anonymous,
-              namedCounts: data.namedCounts,
-            })
-            setConfig(prev => ({ ...prev, currency: loadedCurrency }))
-          } else {
-            // Invalid V3 payload - reset to empty state
-            console.error('Invalid V3 payload structure, resetting to empty state')
-            setState(createEmptyState(data.currency || 'EUR'))
-          }
-        } else if (data.version === 2) {
-          // V2 format - migrate to V3
-          console.log('Migrating V2 to V3 format')
-          const loadedCurrency = 'EUR' // Default to EUR for V2 data
-          setState({
-            anonymous: data.anonymous,
-            namedCounts: data.namedCounts,
-          })
-          setConfig(prev => ({ ...prev, currency: loadedCurrency }))
-          // Save in V3 format immediately
-          const v3Data: StoredCashData = {
-            version: 3,
-            anonymous: data.anonymous,
-            namedCounts: data.namedCounts,
-            lastDate: data.lastDate,
-            currency: loadedCurrency,
-          }
-          localStorage.setItem(storageKey, JSON.stringify(v3Data))
-        } else {
-          // V1 or unknown format - reset
-          console.log('Unknown or legacy format, resetting to empty state')
-          let legacyCurrency = 'EUR'
-          const storedConfig = localStorage.getItem('cashcounter_config')
-          if (storedConfig) {
-            try { legacyCurrency = JSON.parse(storedConfig).currency || 'EUR' } catch { /* ignore */ }
-          }
-          setState(createEmptyState(legacyCurrency))
-          return // Early return
-        }
-      }
-    } catch (err) {
-      console.error('Error loading cash counter data:', err)
-    }
   }, [])
 
   // Handle currency change - reset denomination state when currency changes
