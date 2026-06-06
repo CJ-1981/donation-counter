@@ -427,8 +427,8 @@ export default function CashCounterPage() {
     
     // Generate TSV for all denominations
     const allDenominations = getDenominations(config.currency)
-    const tsvHeader = ['화폐', ...allDenominations.map(d => d.label)].join('\t')
-    const tsvCounts = ['계수', ...allDenominations.map(d => {
+    const tsvHeader = [t('화폐'), ...allDenominations.map(d => d.label)].join('\t')
+    const tsvCounts = [t('계수'), ...allDenominations.map(d => {
       const nc = state.namedCounts[d.value] || 0
       const ac = state.anonymous[d.value] || 0
       return nc + ac
@@ -475,16 +475,8 @@ export default function CashCounterPage() {
       setCopySuccess(true)
       // @MX:NOTE: 2000ms success feedback timeout for user visibility
       setTimeout(() => setCopySuccess(false), 2000)
-    }).catch(() => {
-      const textarea = document.createElement('textarea')
-      textarea.value = markdown
-      document.body.appendChild(textarea)
-      textarea.select()
-      document.execCommand('copy')
-      document.body.removeChild(textarea)
-      setCopySuccess(true)
-      // @MX:NOTE: 2000ms success feedback timeout for user visibility
-      setTimeout(() => setCopySuccess(false), 2000)
+    }).catch(err => {
+      console.error('Copy failed:', err)
     })
   }, [state, config, t])
 

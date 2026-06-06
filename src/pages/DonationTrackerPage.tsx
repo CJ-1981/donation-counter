@@ -37,7 +37,7 @@ export default function DonationTrackerPage() {
     } catch { /* ignore */ }
     return []
   })
-  const [donationTypes] = useState<string[]>(() => {
+  const [donationTypes, setDonationTypes] = useState<string[]>(() => {
     try {
       const stored = localStorage.getItem('church_donation_types')
       if (stored) return JSON.parse(stored)
@@ -46,6 +46,21 @@ export default function DonationTrackerPage() {
   })
   
   const [selectedType, setSelectedType] = useState<string>(t('주일'))
+
+  useEffect(() => {
+    setDonationTypes(prev => {
+      const newTypes = DEFAULT_TYPES_KO.map(x => t(x))
+      setSelectedType(oldSelected => {
+        const idx = prev.indexOf(oldSelected)
+        if (idx !== -1 && idx < newTypes.length) {
+          return newTypes[idx]
+        }
+        return newTypes[0] || oldSelected
+      })
+      return newTypes
+    })
+  }, [t])
+
   const [customType, setCustomType] = useState('')
   const [logs, setLogs] = useState<LogEntry[]>([])
   const [nameInput, setNameInput] = useState('')
@@ -65,15 +80,25 @@ export default function DonationTrackerPage() {
   const [showDropdown, setShowDropdown] = useState(false)
   const [focusedSearchIndex, setFocusedSearchIndex] = useState(-1)
   const searchDropdownRef = useRef<HTMLDivElement>(null)
+  const keyInputRef = useRef<HTMLInputElement>(null)
+  
+  useEffect(() => {
+    if (showKeyModal && keyInputRef.current) {
+      // Small timeout ensures the modal is fully mounted and painted before focusing
+      setTimeout(() => {
+        keyInputRef.current?.focus()
+      }, 50)
+    }
+  }, [showKeyModal])
   
   // Custom Modal State
   const [modalState, setModalState] = useState<{
     isOpen: boolean
     title: string
-    description: string
+    description: React.ReactNode
     isConfirm: boolean
     onConfirm: (() => void) | null
-    confirmText: string
+    confirmText?: string
   }>({
     isOpen: false,
     title: '',
@@ -102,7 +127,8 @@ export default function DonationTrackerPage() {
   const handleUnlock = () => {
     try {
       // @ts-expect-error window extension
-      const encrypted = window.ENCRYPTED_MEMBERS || "__ENCRYPTED_MEMBERS_PLACEHOLDER__"
+      // Read the global variable injected by build.cjs into index.html
+      const encrypted = window.ENCRYPTED_MEMBERS
       const decrypted = CryptoJS.AES.decrypt(encrypted, keyInput).toString(CryptoJS.enc.Utf8)
       if (decrypted) {
         const parsed = JSON.parse(decrypted)
@@ -118,13 +144,20 @@ export default function DonationTrackerPage() {
       // Invalid key
     }
     // Handle invalid key error
-    alert(t('유효하지 않은 키입니다. 자동완성이 잠금 상태로 유지됩니다.'))
+    setModalState({
+      isOpen: true,
+      title: t('경고'),
+      description: t('유효하지 않은 키입니다. 자동완성이 잠금 상태로 유지됩니다.'),
+      isConfirm: false,
+      onConfirm: null,
+      confirmText: t('확인')
+    })
   }
 
   const query = nameInput.trim()
   const searchResults = (() => {
     if (query === '' || query === t('무명')) {
-      return nameHistory.map(m => ({ name: m, matches: m, type: 'history' }))
+      return nameHistory.map(m => ({ name: m, matches: <>{m}</>, type: 'history' }))
     }
     if (!isUnlocked) return []
     
@@ -132,21 +165,36 @@ export default function DonationTrackerPage() {
     const queryChosung = getChosung(queryLower)
     
     return members
-      .map(member => {
+      .map((member): {name: string, matches: React.ReactNode, type: string} | null => {
         const memberLower = member.toLowerCase()
         const memberChosung = getChosung(memberLower)
         
-        if (memberLower.includes(queryLower) || memberChosung.includes(queryChosung)) {
-          let highlighted = member
-          if (memberLower.includes(queryLower)) {
-            const idx = memberLower.indexOf(queryLower)
-            highlighted = `${member.substring(0, idx)}<mark class="bg-violet-200 dark:bg-violet-800 text-violet-900 dark:text-violet-100 rounded px-0.5">${member.substring(idx, idx + queryLower.length)}</mark>${member.substring(idx + queryLower.length)}`
-          }
+        let matchIdx = -1
+        let matchLen = 0
+
+        if (memberLower.includes(queryLower)) {
+          matchIdx = memberLower.indexOf(queryLower)
+          matchLen = queryLower.length
+        } else if (memberChosung.includes(queryChosung)) {
+          matchIdx = memberChosung.indexOf(queryChosung)
+          matchLen = queryChosung.length
+        }
+
+        if (matchIdx !== -1) {
+          const highlighted = (
+            <>
+              {member.substring(0, matchIdx)}
+              <mark className="bg-violet-200 dark:bg-violet-800 text-violet-900 dark:text-violet-100 rounded px-0.5">
+                {member.substring(matchIdx, matchIdx + matchLen)}
+              </mark>
+              {member.substring(matchIdx + matchLen)}
+            </>
+          )
           return { name: member, matches: highlighted, type: 'member' }
         }
         return null
       })
-      .filter((x): x is {name: string, matches: string, type: string} => x !== null)
+      .filter((x): x is {name: string, matches: React.ReactNode, type: string} => x !== null)
       .slice(0, 5)
   })()
 
@@ -261,7 +309,7 @@ export default function DonationTrackerPage() {
     document.getElementById('memberNameInput')?.focus()
   }
 
-  const showModal = (title: string, description: string, isConfirm = false, onConfirm: (() => void) | null = null, confirmText = t('확인')) => {
+  const showModal = (title: string, description: React.ReactNode, isConfirm = false, onConfirm: (() => void) | null = null, confirmText = t('확인')) => {
     setModalState({
       isOpen: true,
       title,
@@ -335,30 +383,12 @@ export default function DonationTrackerPage() {
     const rows = logs.map(log => [log.name, log.amount.toFixed(2), log.type].join("\t"))
     const tsvContent = [headers, ...rows].join("\n")
 
-    const textarea = document.createElement("textarea")
-    textarea.value = tsvContent
-    textarea.style.position = "fixed"
-    textarea.style.left = "-9999px"
-    textarea.style.top = "-9999px"
-    document.body.appendChild(textarea)
-    
-    textarea.select()
-    textarea.setSelectionRange(0, 99999)
-
-    let successful = false
-    try {
-      successful = document.execCommand('copy')
-    } catch (err) {
-      console.error(err)
-    }
-
-    document.body.removeChild(textarea)
-
-    if (successful) {
+    navigator.clipboard.writeText(tsvContent).then(() => {
       showModal(t('복사 완료'), t('클립보드에 복사되었습니다. 엑셀 등 스프레드시트 프로그램의 원하는 셀을 선택하고 붙여넣기(Ctrl+V)를 하시면 됩니다.'))
-    } else {
+    }).catch(err => {
+      console.error('Copy failed:', err)
       showModal(t('복사 실패'), t('브라우저 정책상 복사가 차단되었습니다. 다운로드 기능을 이용해 주십시오.'))
-    }
+    })
   }
 
   // Compute breakdown
@@ -440,7 +470,7 @@ export default function DonationTrackerPage() {
                         focusedSearchIndex === idx ? 'bg-violet-50 dark:bg-violet-900/40 font-bold' : 'hover:bg-slate-50 dark:hover:bg-slate-700 font-medium'
                       }`}
                     >
-                      <span dangerouslySetInnerHTML={{ __html: result.matches }} />
+                      <span>{result.matches}</span>
                       {result.type === 'history' && (
                         <span className="text-xs text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-700/50 px-2 py-1 rounded-full">
                           최근
@@ -692,6 +722,8 @@ export default function DonationTrackerPage() {
               </p>
             </div>
             <input 
+              ref={keyInputRef}
+              autoFocus
               type="password" 
               value={keyInput}
               onChange={e => setKeyInput(e.target.value)}
@@ -715,7 +747,7 @@ export default function DonationTrackerPage() {
               </div>
               <div className="space-y-1">
                 <h3 className="text-xl font-extrabold text-slate-950 dark:text-slate-100">{modalState.title}</h3>
-                <p dangerouslySetInnerHTML={{ __html: modalState.description }} className="text-slate-600 dark:text-slate-400 text-sm font-medium leading-relaxed"></p>
+                <p className="text-slate-600 dark:text-slate-400 text-sm font-medium leading-relaxed">{modalState.description}</p>
               </div>
             </div>
             <div className="flex gap-2.5 justify-end pt-2">
