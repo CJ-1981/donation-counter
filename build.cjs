@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 
 const PLACEHOLDER = '__ENCRYPTED_MEMBERS_PLACEHOLDER__';
-const SOURCE_FILE = path.join(__dirname, 'index.html');
+const SOURCE_FILE = path.join(__dirname, 'dist', 'index.html');
 const DIST_DIR = path.join(__dirname, 'dist');
 
 function main() {

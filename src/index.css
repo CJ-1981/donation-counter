@@ -1,0 +1,26 @@
+@import "tailwindcss";
+
+html {
+  --font-scale: 1;
+}
+.no-scale {
+  font-size: 1rem !important;
+}
+.reduced-scale {
+  font-size: calc(1rem * var(--font-scale) * 0.75);
+}
+.scalable-content {
+  font-size: calc(1rem * var(--font-scale));
+}
+.scalable-content span,
+.scalable-content div,
+.scalable-content p,
+.scalable-content h1,
+.scalable-content h2,
+.scalable-content h3,
+.scalable-content h4,
+.scalable-content h5,
+.scalable-content h6,
+.scalable-content input {
+  font-size: inherit !important;
+}
