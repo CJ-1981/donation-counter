@@ -423,6 +423,22 @@ export default function CashCounterPage() {
     }
 
     lines.push('---')
+    lines.push('### Excel Export (TSV)')
+    
+    // Generate TSV for all denominations
+    const allDenominations = getDenominations(config.currency)
+    const tsvHeader = ['화폐', ...allDenominations.map(d => d.label)].join('\t')
+    const tsvCounts = ['계수', ...allDenominations.map(d => {
+      const nc = state.namedCounts[d.value] || 0
+      const ac = state.anonymous[d.value] || 0
+      return nc + ac
+    })].join('\t')
+
+    lines.push(tsvHeader)
+    lines.push(tsvCounts)
+    lines.push('')
+
+    lines.push('---')
     lines.push(`**${t('cashCounter.namedTotal')}:** ${currency} ${namedTotalLocal.toFixed(2)} (${t('cashCounter.bills')}: ${currency} ${namedBreakdownLocal.bills.toFixed(2)}, ${t('cashCounter.coins')}: ${currency} ${namedBreakdownLocal.coins.toFixed(2)})`)
     lines.push('')
     lines.push(`**${t('cashCounter.anonymousTotal')}:** ${currency} ${anonymousTotalLocal.toFixed(2)} (${t('cashCounter.bills')}: ${currency} ${anonymousBreakdownLocal.bills.toFixed(2)}, ${t('cashCounter.coins')}: ${currency} ${anonymousBreakdownLocal.coins.toFixed(2)})`)
