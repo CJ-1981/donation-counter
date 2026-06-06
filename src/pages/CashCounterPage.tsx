@@ -97,6 +97,7 @@ export default function CashCounterPage() {
   // Refs for localStorage save optimization
   const isInitialRender = useRef(true)
   const previousStateRef = useRef<CashCounterState>(createEmptyState('EUR'))
+  const configRef = useRef<Config>(config)
 
   // Load config from localStorage (run once)
   useEffect(() => {
@@ -111,6 +112,11 @@ export default function CashCounterPage() {
       }
     }
   }, [])
+
+  // Keep configRef in sync with config for use in cleanup closures
+  useEffect(() => {
+    configRef.current = config
+  }, [config])
 
   // @MX:ANCHOR: Config state management with localStorage persistence
   // @MX:REASON: Called from 8+ locations - critical config management across component lifecycle
@@ -266,7 +272,7 @@ export default function CashCounterPage() {
             anonymous: previousStateRef.current.anonymous,
             namedCounts: previousStateRef.current.namedCounts,
             lastDate: getLocalDateString(),
-            currency: config.currency,
+            currency: configRef.current.currency,
           }
           localStorage.setItem(storageKey, JSON.stringify(data))
         } catch (err) {
@@ -470,17 +476,46 @@ export default function CashCounterPage() {
     }
 
     const markdown = lines.join('\n')
-    navigator.clipboard.writeText(markdown).then(() => {
-      setCopyError(false)
-      setCopySuccess(true)
-      // @MX:NOTE: 2000ms success feedback timeout for user visibility
-      setTimeout(() => setCopySuccess(false), 2000)
-    }).catch(err => {
-      console.error('Copy failed:', err)
-      setCopySuccess(false)
-      setCopyError(true)
-      setTimeout(() => setCopyError(false), 3000)
-    })
+
+    const copyWithFallback = () => {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(markdown).then(() => {
+          setCopyError(false)
+          setCopySuccess(true)
+          // @MX:NOTE: 2000ms success feedback timeout for user visibility
+          setTimeout(() => setCopySuccess(false), 2000)
+        }).catch(err => {
+          console.error('Copy failed:', err)
+          setCopySuccess(false)
+          setCopyError(true)
+          setTimeout(() => setCopyError(false), 3000)
+        })
+      } else {
+        try {
+          const textArea = document.createElement('textarea')
+          textArea.value = markdown
+          textArea.style.position = 'fixed'
+          document.body.appendChild(textArea)
+          textArea.focus()
+          textArea.select()
+          const successful = document.execCommand('copy')
+          document.body.removeChild(textArea)
+          if (successful) {
+            setCopyError(false)
+            setCopySuccess(true)
+            setTimeout(() => setCopySuccess(false), 2000)
+          } else {
+            throw new Error('execCommand copy failed')
+          }
+        } catch (err) {
+          console.error('Fallback copy failed:', err)
+          setCopySuccess(false)
+          setCopyError(true)
+          setTimeout(() => setCopyError(false), 3000)
+        }
+      }
+    }
+    copyWithFallback()
   }, [state, config, t, i18n.language])
 
   // Calculations

@@ -96,7 +96,12 @@ export default function DonationTrackerPage() {
   const [nameHistory, setNameHistory] = useState<string[]>(() => {
     try {
       const stored = localStorage.getItem('church_name_history')
-      if (stored) return JSON.parse(stored)
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        if (Array.isArray(parsed) && parsed.every((item: unknown) => typeof item === 'string')) {
+          return parsed
+        }
+      }
     } catch { /* ignore */ }
     return []
   })
@@ -184,7 +189,7 @@ export default function DonationTrackerPage() {
 
   const query = nameInput.trim()
   const searchResults = (() => {
-    if (query === '' || query === t('tracker.anonymousRaw')) {
+    if (query === '' || query === '__anonymous__' || query === t('tracker.anonymousRaw')) {
       return nameHistory.map(m => ({ name: m, matches: <>{m}</>, type: 'history' }))
     }
     if (!isUnlocked) return []
@@ -230,7 +235,7 @@ export default function DonationTrackerPage() {
   // We intentionally omit `setShowDropdown` and `setFocusedSearchIndex` from dependencies 
   // because this effect is strictly for responding to input changes, not reacting to its own state updates.
   useEffect(() => {
-    if (query === '' || query === t('tracker.anonymousRaw')) {
+    if (query === '' || query === '__anonymous__' || query === t('tracker.anonymousRaw')) {
       // Hide automatically when cleared. User can bring up history via arrow keys.
       setShowDropdown(false)
     } else if (searchResults.length > 0 && isUnlocked) {
@@ -308,7 +313,7 @@ export default function DonationTrackerPage() {
     }
 
     const newLog: LogEntry = {
-      id: crypto.randomUUID(),
+      id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15),
       name: name,
       amount: amountVal,
       type: finalType
@@ -435,12 +440,36 @@ export default function DonationTrackerPage() {
     })
     const tsvContent = [headers, ...rows].join("\n")
 
-    navigator.clipboard.writeText(tsvContent).then(() => {
-      showModal(t('tracker.copySuccess'), t('tracker.copySuccessDesc'))
-    }).catch(err => {
-      console.error('Copy failed:', err)
-      showModal(t('tracker.copyFailed'), t('tracker.copyFailedDesc'))
-    })
+    const copyWithFallback = () => {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(tsvContent).then(() => {
+          showModal(t('tracker.copySuccess'), t('tracker.copySuccessDesc'))
+        }).catch(err => {
+          console.error('Copy failed:', err)
+          showModal(t('tracker.copyFailed'), t('tracker.copyFailedDesc'))
+        })
+      } else {
+        try {
+          const textArea = document.createElement('textarea')
+          textArea.value = tsvContent
+          textArea.style.position = 'fixed'
+          document.body.appendChild(textArea)
+          textArea.focus()
+          textArea.select()
+          const successful = document.execCommand('copy')
+          document.body.removeChild(textArea)
+          if (successful) {
+            showModal(t('tracker.copySuccess'), t('tracker.copySuccessDesc'))
+          } else {
+            throw new Error('execCommand copy failed')
+          }
+        } catch (err) {
+          console.error('Fallback copy failed:', err)
+          showModal(t('tracker.copyFailed'), t('tracker.copyFailedDesc'))
+        }
+      }
+    }
+    copyWithFallback()
   }
 
   // Compute breakdown
