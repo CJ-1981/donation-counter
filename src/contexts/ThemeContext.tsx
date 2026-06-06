@@ -11,34 +11,33 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
+const getPreferredTheme = (t: Theme): 'light' | 'dark' => {
+  if (t === 'light') return 'light'
+  if (t === 'dark') return 'dark'
+  if (typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    return 'dark'
+  }
+  return 'light'
+}
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(() => {
-    const stored = localStorage.getItem('theme') as Theme | null
-    return stored || 'system'
+    const stored = localStorage.getItem('theme')
+    if (stored === 'light' || stored === 'dark' || stored === 'system') {
+      return stored
+    }
+    return 'system'
   })
 
   const [effectiveTheme, setEffectiveTheme] = useState<'light' | 'dark'>(() => {
-    if (typeof window === 'undefined') return 'light'
-    const stored = localStorage.getItem('theme') as Theme | null
-    if (stored === 'light') return 'light'
-    if (stored === 'dark') return 'dark'
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+    return getPreferredTheme(theme)
   })
 
   useEffect(() => {
     const root = document.documentElement
 
     const updateTheme = () => {
-      let resolved: 'light' | 'dark'
-
-      if (theme === 'light') {
-        resolved = 'light'
-      } else if (theme === 'dark') {
-        resolved = 'dark'
-      } else {
-        resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-      }
-
+      const resolved = getPreferredTheme(theme)
       setEffectiveTheme(resolved)
       root.classList.remove('light', 'dark')
       root.classList.add(resolved)

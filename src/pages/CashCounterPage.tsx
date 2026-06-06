@@ -80,7 +80,7 @@ const createEmptyState = (currency: string): CashCounterState => ({
 // ==================== MAIN PAGE COMPONENT ====================
 
 export default function CashCounterPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
 
   // State
   const [state, setState] = useState<CashCounterState>(() => createEmptyState('EUR'))
@@ -90,6 +90,7 @@ export default function CashCounterPage() {
   })
   const [config, setConfig] = useState<Config>({ currency: 'EUR', targetAmount: 0 })
   const [copySuccess, setCopySuccess] = useState(false)
+  const [copyError, setCopyError] = useState(false)
   const [showConfig, setShowConfig] = useState(false)
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
@@ -433,10 +434,12 @@ export default function CashCounterPage() {
     lines.push(tsvCounts)
     lines.push('')
 
+    const { language } = i18n
+
     lines.push('---')
-    lines.push(`**${t('cashCounter.namedTotal')}:** ${formatCurrencyAmount(namedTotalLocal, currency)} (${t('cashCounter.bills')}: ${formatCurrencyAmount(namedBreakdownLocal.bills, currency)}, ${t('cashCounter.coins')}: ${formatCurrencyAmount(namedBreakdownLocal.coins, currency)})`)
+    lines.push(`**${t('cashCounter.namedTotal')}:** ${formatCurrencyAmount(namedTotalLocal, currency, language)} (${t('cashCounter.bills')}: ${formatCurrencyAmount(namedBreakdownLocal.bills, currency, language)}, ${t('cashCounter.coins')}: ${formatCurrencyAmount(namedBreakdownLocal.coins, currency, language)})`)
     lines.push('')
-    lines.push(`**${t('cashCounter.anonymousTotal')}:** ${formatCurrencyAmount(anonymousTotalLocal, currency)} (${t('cashCounter.bills')}: ${formatCurrencyAmount(anonymousBreakdownLocal.bills, currency)}, ${t('cashCounter.coins')}: ${formatCurrencyAmount(anonymousBreakdownLocal.coins, currency)})`)
+    lines.push(`**${t('cashCounter.anonymousTotal')}:** ${formatCurrencyAmount(anonymousTotalLocal, currency, language)} (${t('cashCounter.bills')}: ${formatCurrencyAmount(anonymousBreakdownLocal.bills, currency, language)}, ${t('cashCounter.coins')}: ${formatCurrencyAmount(anonymousBreakdownLocal.coins, currency, language)})`)
     lines.push('')
 
     const grandTotalLocal = namedTotalLocal + anonymousTotalLocal
@@ -445,11 +448,11 @@ export default function CashCounterPage() {
       coins: namedBreakdownLocal.coins + anonymousBreakdownLocal.coins,
     }
 
-    lines.push(`**${t('cashCounter.grandTotal')}:** ${formatCurrencyAmount(grandTotalLocal, currency)} (${t('cashCounter.bills')}: ${formatCurrencyAmount(grandBreakdownLocal.bills, currency)}, ${t('cashCounter.coins')}: ${formatCurrencyAmount(grandBreakdownLocal.coins, currency)})`)
+    lines.push(`**${t('cashCounter.grandTotal')}:** ${formatCurrencyAmount(grandTotalLocal, currency, language)} (${t('cashCounter.bills')}: ${formatCurrencyAmount(grandBreakdownLocal.bills, currency, language)}, ${t('cashCounter.coins')}: ${formatCurrencyAmount(grandBreakdownLocal.coins, currency, language)})`)
     lines.push('')
 
     if (config.targetAmount > 0) {
-      lines.push(`**${t('cashCounter.transactionsTotal')}:** ${formatCurrencyAmount(config.targetAmount, currency)}`)
+      lines.push(`**${t('cashCounter.transactionsTotal')}:** ${formatCurrencyAmount(config.targetAmount, currency, language)}`)
       lines.push('')
 
       const diff = grandTotalLocal - config.targetAmount
@@ -457,23 +460,27 @@ export default function CashCounterPage() {
       // @MX:NOTE: 0.01 tolerance accounts for floating point precision in currency calculations
       const tolerance = 0.01
       if (absDiff <= tolerance) {
-        lines.push(`✅ **${t('cashCounter.match')}** — ${formatCurrencyAmount(absDiff, currency)}`)
+        lines.push(`✅ **${t('cashCounter.match')}** — ${formatCurrencyAmount(absDiff, currency, language)}`)
       } else if (diff > 0) {
-        lines.push(`⬆️ **${t('cashCounter.excess')}** — ${formatCurrencyAmount(absDiff, currency)}`)
+        lines.push(`⬆️ **${t('cashCounter.excess')}** — ${formatCurrencyAmount(absDiff, currency, language)}`)
       } else {
-        lines.push(`⬇️ **${t('cashCounter.shortage')}** — ${formatCurrencyAmount(absDiff, currency)}`)
+        lines.push(`⬇️ **${t('cashCounter.shortage')}** — ${formatCurrencyAmount(absDiff, currency, language)}`)
       }
     }
 
     const markdown = lines.join('\n')
     navigator.clipboard.writeText(markdown).then(() => {
+      setCopyError(false)
       setCopySuccess(true)
       // @MX:NOTE: 2000ms success feedback timeout for user visibility
       setTimeout(() => setCopySuccess(false), 2000)
     }).catch(err => {
       console.error('Copy failed:', err)
+      setCopySuccess(false)
+      setCopyError(true)
+      setTimeout(() => setCopyError(false), 3000)
     })
-  }, [state, config, t])
+  }, [state, config, t, i18n.language])
 
   // Calculations
   const anonymousTotal = calculateDenominationTotal(state.anonymous, config.currency)
@@ -694,12 +701,16 @@ export default function CashCounterPage() {
             <button
               type="button"
               onClick={handleShare}
-              className={`min-w-[100px] px-6 py-2 rounded-lg flex items-center justify-center transition-colors font-medium text-nowrap ${copySuccess
+              className={`min-w-[100px] px-6 py-2 rounded-lg flex items-center justify-center transition-colors font-medium text-nowrap ${copyError 
+                  ? 'bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400' 
+                  : copySuccess
                   ? 'bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400'
                   : 'bg-indigo-100 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-200 dark:hover:bg-indigo-900/30'
                 }`}
             >
-              {copySuccess ? (
+              {copyError ? (
+                <span>{t('cashCounter.copyError') || 'Failed to copy'}</span>
+              ) : copySuccess ? (
                 <span>{t('cashCounter.copied')}</span>
               ) : (
                 <span>{t('cashCounter.share')}</span>

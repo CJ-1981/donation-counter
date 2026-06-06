@@ -51,10 +51,10 @@ function DenominationControls({ count, onChange, onInput, color, denomination }:
           value={inputValue}
           placeholder="0"
           onChange={(e) => setInputValue(e.target.value)}
-          onBlur={() => onInput(parseInt(inputValue) || 0)}
+          onBlur={() => onInput(Math.max(0, Math.min(999, parseInt(inputValue) || 0)))}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
-              onInput(parseInt(inputValue) || 0)
+              onInput(Math.max(0, Math.min(999, parseInt(inputValue) || 0)))
               e.currentTarget.blur()
             }
           }}

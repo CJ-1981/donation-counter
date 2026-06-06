@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import CryptoJS from 'crypto-js'
 import { useTranslation } from 'react-i18next'
 import { CURRENCY_DENOMINATIONS } from '../config/currencyDenominations'
@@ -33,29 +33,25 @@ export default function DonationTrackerPage() {
   // Setup state
   const [members, setMembers] = useState<string[]>([])
   
-  const [donationTypes, setDonationTypes] = useState<string[]>(() => {
+  const donationTypes = useMemo(() => {
     try {
       const stored = localStorage.getItem('church_donation_types')
-      if (stored) return JSON.parse(stored)
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed
+      }
     } catch { /* ignore */ }
     return DEFAULT_TYPES_KEYS.map(x => t(x))
-  })
+  }, [t])
   
-  const [selectedType, setSelectedType] = useState<string>(t('tracker.sunday'))
+  const [selectedType, setSelectedType] = useState<string>(donationTypes[0] || t('tracker.sunday'))
 
   useEffect(() => {
-    setDonationTypes(prev => {
-      const newTypes = DEFAULT_TYPES_KEYS.map(x => t(x))
-      setSelectedType(oldSelected => {
-        const idx = prev.indexOf(oldSelected)
-        if (idx !== -1 && idx < newTypes.length) {
-          return newTypes[idx]
-        }
-        return newTypes[0] || oldSelected
-      })
-      return newTypes
+    setSelectedType(prev => {
+      if (donationTypes.includes(prev)) return prev
+      return donationTypes[0] || prev
     })
-  }, [t])
+  }, [donationTypes])
 
   const [customType, setCustomType] = useState('')
   const [currencyConfig] = useState(() => {
@@ -208,7 +204,9 @@ export default function DonationTrackerPage() {
       .slice(0, 5)
   })()
 
-  // Keep dropdown state in sync if input is empty
+  // @MX:NOTE: Synchronize derived UI state (dropdown visibility) based on query and results.
+  // We intentionally omit `setShowDropdown` and `setFocusedSearchIndex` from dependencies 
+  // because this effect is strictly for responding to input changes, not reacting to its own state updates.
   useEffect(() => {
     if (query === '' || query === t('tracker.anonymousRaw')) {
       // Hide automatically when cleared. User can bring up history via arrow keys.

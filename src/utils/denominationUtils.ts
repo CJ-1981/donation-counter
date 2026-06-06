@@ -24,15 +24,18 @@ export function createEmptyDenominationState(currencyCode: string): Record<numbe
  * Format currency amount using Intl.NumberFormat for proper decimal places
  * @param amount - The amount to format
  * @param currencyCode - ISO 4217 currency code
+ * @param locale - Optional locale string (defaults to navigator.language or 'en-US')
  * @returns Formatted string with currency symbol and correct decimal places
  */
-export function formatCurrencyAmount(amount: number, currencyCode: string): string {
+export function formatCurrencyAmount(amount: number, currencyCode: string, locale?: string): string {
   // JPY and KRW have zero decimal places (integers)
   // Other currencies have 2 decimal places (EUR, USD, GBP, INR) or more
   const zeroDecimalCurrencies = ['JPY', 'KRW']
   const maximumFractionDigits = zeroDecimalCurrencies.includes(currencyCode) ? 0 : 2
+  
+  const targetLocale = locale || (typeof navigator !== 'undefined' && navigator.language) || 'en-US'
 
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat(targetLocale, {
     style: 'currency',
     currency: currencyCode,
     maximumFractionDigits: maximumFractionDigits,
