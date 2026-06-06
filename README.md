@@ -1,98 +1,73 @@
-# Donation Counter
+# React + TypeScript + Vite
 
-Church donation tracking web app with two main features: **Cash Counter** and **Donation Tracker**. Built as a single-page application deployed to GitHub Pages.
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-**Live**: https://cj-1981.github.io/donation-counter/
+Currently, two official plugins are available:
 
-## Features
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
 
-### Cash Counter
-- Count cash denominations with + / - buttons
-- Real-time total calculation
-- Multi-currency support (EUR, USD, GBP, KRW, JPY)
-- Dark mode toggle
-- Font size adjustment (Normal / Large / Extra Large)
-- Language switching (Korean / English)
-- Swipe left/right to navigate to Donation Tracker
+## React Compiler
 
-### Donation Tracker
-- Add donation entries with member name, amount, and type
-- Member name auto-suggestion (requires unlock key)
-- Predefined donation types: Tithe, Sunday, Thanksgiving, Special, Mission, Sunday School
-- Custom donation type input
-- Per-type breakdown with percentages
-- Export to CSV (Excel-compatible with UTF-8 BOM)
-- Copy to clipboard as TSV (paste directly into Excel)
-- Delete individual entries or clear all
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
-### Security
-- Member database encrypted with AES (CryptoJS)
-- Encryption key stored as GitHub Secret
-- Key input required at runtime to unlock auto-suggestion
-- Plain text input works without the key
+## Expanding the ESLint configuration
 
-## Architecture
+If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
 
-```
-donation-counter/
-├── index.html          # Entire application (React 19 + vanilla JS)
-├── build.js            # Encrypts member names, outputs dist/
-├── package.json        # crypto-js dependency (for build only)
-├── CODEMAP.md          # Detailed code reference with line numbers
-├── .github/
-│   └── workflows/
-│       └── deploy.yml  # CI/CD → GitHub Pages
-└── README.md           # This file
+```js
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+
+      // Remove tseslint.configs.recommended and replace with this
+      tseslint.configs.recommendedTypeChecked,
+      // Alternatively, use this for stricter rules
+      tseslint.configs.strictTypeChecked,
+      // Optionally, add this for stylistic rules
+      tseslint.configs.stylisticTypeChecked,
+
+      // Other configs...
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
 ```
 
-### Tech Stack
-- **Frontend**: React 19, Tailwind CSS, shadcn/ui, Radix UI, i18next
-- **Tracker**: Vanilla JavaScript
-- **Encryption**: CryptoJS AES
-- **CD**: GitHub Actions → GitHub Pages
+You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
 
-### How It Works
-- `index.html` is the source file containing both the React Cash Counter and the vanilla JS Donation Tracker
-- `build.js` encrypts member names using `MEMBERS` and `MEMBER_KEY` environment variables
-- GitHub Actions runs `build.js`, producing `dist/index.html` with the encrypted data
-- The built `dist/index.html` is deployed to GitHub Pages
-- Users enter the decryption key in the app to unlock member auto-suggestion
+```js
+// eslint.config.js
+import reactX from 'eslint-plugin-react-x'
+import reactDom from 'eslint-plugin-react-dom'
 
-## Setup
-
-### Prerequisites
-- Node.js 20+
-- GitHub account with repository secrets configured
-
-### GitHub Secrets
-Set these in your repository settings (Settings → Secrets and variables → Actions):
-
-| Secret | Description |
-|--------|-------------|
-| `MEMBERS` | JSON array of member names, e.g. `["김철수","이영희","박민수"]` |
-| `MEMBER_KEY` | AES encryption key (shared with app users) |
-
-### Local Development
-```bash
-# Install dependencies (for build script only)
-npm install
-
-# Build with local env vars (optional)
-MEMBERS='["name1","name2"]' MEMBER_KEY='your-key' node build.js
-
-# Or simply open index.html directly in a browser
-# (auto-suggestion will be disabled without encrypted data)
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+      // Enable lint rules for React
+      reactX.configs['recommended-typescript'],
+      // Enable lint rules for React DOM
+      reactDom.configs.recommended,
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
 ```
-
-### Deployment
-Push to `main` branch — GitHub Actions automatically builds and deploys to GitHub Pages.
-
-## Development Reference
-
-See [CODEMAP.md](./CODEMAP.md) for a detailed code map with:
-- Line-by-line section breakdown of `index.html`
-- All function signatures and locations
-- localStorage key documentation
-- i18n translation map
-- Cross-component communication patterns
-- Known issues and design decisions
