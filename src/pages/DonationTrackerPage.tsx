@@ -10,7 +10,7 @@ interface LogEntry {
   type: string
 }
 
-const DEFAULT_TYPES_KO = ["주일", "십일조", "감사", "선교/구제", "특별헌금", "주일학교"]
+const DEFAULT_TYPES_KEYS = ['tracker.sunday', 'tracker.tithe', 'tracker.thanksgiving', 'tracker.missions', 'tracker.special', 'tracker.sundaySchool']
 
 // KOREAN CHOSUNG (INITIAL CONSONANT) EXTRACTION
 function getChosung(str: string) {
@@ -31,26 +31,21 @@ export default function DonationTrackerPage() {
   const { t } = useTranslation()
 
   // Setup state
-  const [members, setMembers] = useState<string[]>(() => {
-    try {
-      const stored = localStorage.getItem('church_members_db')
-      if (stored) return JSON.parse(stored)
-    } catch { /* ignore */ }
-    return []
-  })
+  const [members, setMembers] = useState<string[]>([])
+  
   const [donationTypes, setDonationTypes] = useState<string[]>(() => {
     try {
       const stored = localStorage.getItem('church_donation_types')
       if (stored) return JSON.parse(stored)
     } catch { /* ignore */ }
-    return DEFAULT_TYPES_KO.map(x => t(x))
+    return DEFAULT_TYPES_KEYS.map(x => t(x))
   })
   
   const [selectedType, setSelectedType] = useState<string>(t('tracker.sunday'))
 
   useEffect(() => {
     setDonationTypes(prev => {
-      const newTypes = DEFAULT_TYPES_KO.map(x => t(x))
+      const newTypes = DEFAULT_TYPES_KEYS.map(x => t(x))
       setSelectedType(oldSelected => {
         const idx = prev.indexOf(oldSelected)
         if (idx !== -1 && idx < newTypes.length) {
@@ -309,7 +304,6 @@ export default function DonationTrackerPage() {
       if (!members.includes(name)) {
         const newMembers = [...members, name]
         setMembers(newMembers)
-        localStorage.setItem('church_members_db', JSON.stringify(newMembers))
       }
     }
 
@@ -652,8 +646,8 @@ export default function DonationTrackerPage() {
             <table className="w-full text-left border-collapse table-auto">
               <thead>
                 <tr className="text-slate-400 font-bold text-sm border-b border-slate-100 dark:border-slate-700">
-                  <th className="pb-2 px-2 w-1/3">{t('이름')}</th>
-                  <th className="pb-2 px-2 w-1/4">{t('구분')}</th>
+                  <th className="pb-2 px-2 w-1/3">{t('tracker.name')}</th>
+                  <th className="pb-2 px-2 w-1/4">{t('tracker.type')}</th>
                   <th className="pb-2 px-2 text-right">{t('tracker.amount')}</th>
                   <th className="pb-2 text-center w-10"></th>
                 </tr>

@@ -134,7 +134,7 @@ export default function CashCounterPage() {
         if (data.lastDate !== today) {
           localStorage.removeItem(storageKey)
           // eslint-disable-next-line react-hooks/set-state-in-effect
-          setState(createEmptyState('EUR'))
+          setState(createEmptyState(data.currency || 'EUR'))
           return
         }
 
@@ -152,7 +152,7 @@ export default function CashCounterPage() {
           } else {
             // Invalid V3 payload - reset to empty state
             console.error('Invalid V3 payload structure, resetting to empty state')
-            setState(createEmptyState('EUR'))
+            setState(createEmptyState(data.currency || 'EUR'))
           }
         } else if (data.version === 2) {
           // V2 format - migrate to V3
@@ -175,18 +175,13 @@ export default function CashCounterPage() {
         } else {
           // V1 or unknown format - reset
           console.log('Unknown or legacy format, resetting to empty state')
-          setState(createEmptyState('EUR'))
-          return // Early return to avoid unnecessary state updates when V3 branch already handled
-        }
-        if (typeof data.anonymous === 'object' && data.anonymous !== null &&
-          typeof data.namedCounts === 'object' && data.namedCounts !== null) {
-          const loadedCurrency = data.currency || 'EUR'
-          setState({
-            anonymous: data.anonymous,
-            namedCounts: data.namedCounts,
-          })
-          // Update currency separately without triggering data reload
-          setConfig(prev => ({ ...prev, currency: loadedCurrency }))
+          let legacyCurrency = 'EUR'
+          const storedConfig = localStorage.getItem('cashcounter_config')
+          if (storedConfig) {
+            try { legacyCurrency = JSON.parse(storedConfig).currency || 'EUR' } catch { /* ignore */ }
+          }
+          setState(createEmptyState(legacyCurrency))
+          return // Early return
         }
       }
     } catch (err) {
@@ -439,9 +434,9 @@ export default function CashCounterPage() {
     lines.push('')
 
     lines.push('---')
-    lines.push(`**${t('cashCounter.namedTotal')}:** ${currency} ${namedTotalLocal.toFixed(2)} (${t('cashCounter.bills')}: ${currency} ${namedBreakdownLocal.bills.toFixed(2)}, ${t('cashCounter.coins')}: ${currency} ${namedBreakdownLocal.coins.toFixed(2)})`)
+    lines.push(`**${t('cashCounter.namedTotal')}:** ${formatCurrencyAmount(namedTotalLocal, currency)} (${t('cashCounter.bills')}: ${formatCurrencyAmount(namedBreakdownLocal.bills, currency)}, ${t('cashCounter.coins')}: ${formatCurrencyAmount(namedBreakdownLocal.coins, currency)})`)
     lines.push('')
-    lines.push(`**${t('cashCounter.anonymousTotal')}:** ${currency} ${anonymousTotalLocal.toFixed(2)} (${t('cashCounter.bills')}: ${currency} ${anonymousBreakdownLocal.bills.toFixed(2)}, ${t('cashCounter.coins')}: ${currency} ${anonymousBreakdownLocal.coins.toFixed(2)})`)
+    lines.push(`**${t('cashCounter.anonymousTotal')}:** ${formatCurrencyAmount(anonymousTotalLocal, currency)} (${t('cashCounter.bills')}: ${formatCurrencyAmount(anonymousBreakdownLocal.bills, currency)}, ${t('cashCounter.coins')}: ${formatCurrencyAmount(anonymousBreakdownLocal.coins, currency)})`)
     lines.push('')
 
     const grandTotalLocal = namedTotalLocal + anonymousTotalLocal
@@ -450,11 +445,11 @@ export default function CashCounterPage() {
       coins: namedBreakdownLocal.coins + anonymousBreakdownLocal.coins,
     }
 
-    lines.push(`**${t('cashCounter.grandTotal')}:** ${currency} ${grandTotalLocal.toFixed(2)} (${t('cashCounter.bills')}: ${currency} ${grandBreakdownLocal.bills.toFixed(2)}, ${t('cashCounter.coins')}: ${currency} ${grandBreakdownLocal.coins.toFixed(2)})`)
+    lines.push(`**${t('cashCounter.grandTotal')}:** ${formatCurrencyAmount(grandTotalLocal, currency)} (${t('cashCounter.bills')}: ${formatCurrencyAmount(grandBreakdownLocal.bills, currency)}, ${t('cashCounter.coins')}: ${formatCurrencyAmount(grandBreakdownLocal.coins, currency)})`)
     lines.push('')
 
     if (config.targetAmount > 0) {
-      lines.push(`**${t('cashCounter.transactionsTotal')}:** ${currency} ${config.targetAmount.toFixed(2)}`)
+      lines.push(`**${t('cashCounter.transactionsTotal')}:** ${formatCurrencyAmount(config.targetAmount, currency)}`)
       lines.push('')
 
       const diff = grandTotalLocal - config.targetAmount
@@ -462,11 +457,11 @@ export default function CashCounterPage() {
       // @MX:NOTE: 0.01 tolerance accounts for floating point precision in currency calculations
       const tolerance = 0.01
       if (absDiff <= tolerance) {
-        lines.push(`✅ **${t('cashCounter.match')}** — ${currency} ${absDiff.toFixed(2)}`)
+        lines.push(`✅ **${t('cashCounter.match')}** — ${formatCurrencyAmount(absDiff, currency)}`)
       } else if (diff > 0) {
-        lines.push(`⬆️ **${t('cashCounter.excess')}** — ${currency} ${absDiff.toFixed(2)}`)
+        lines.push(`⬆️ **${t('cashCounter.excess')}** — ${formatCurrencyAmount(absDiff, currency)}`)
       } else {
-        lines.push(`⬇️ **${t('cashCounter.shortage')}** — ${currency} ${absDiff.toFixed(2)}`)
+        lines.push(`⬇️ **${t('cashCounter.shortage')}** — ${formatCurrencyAmount(absDiff, currency)}`)
       }
     }
 

@@ -29,12 +29,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const root = document.documentElement
 
     const updateTheme = () => {
-      const stored = localStorage.getItem('theme') as Theme | null
       let resolved: 'light' | 'dark'
 
-      if (stored === 'light') {
+      if (theme === 'light') {
         resolved = 'light'
-      } else if (stored === 'dark') {
+      } else if (theme === 'dark') {
         resolved = 'dark'
       } else {
         resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
