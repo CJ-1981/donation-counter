@@ -578,17 +578,17 @@ export default function DonationTrackerPage() {
                       tabIndex={0}
                       onClick={() => {
                         setSelectedType(type)
-                        setCustomType(type)
+                        setCustomType('')
                       }}
                       onKeyDown={(e) => {
                         if (e.key === ' ' || e.key === 'Spacebar') {
                           e.preventDefault()
                           setSelectedType(type)
-                          setCustomType(type)
+                          setCustomType('')
                         } else if (e.key === 'Enter') {
                           e.preventDefault()
                           setSelectedType(type)
-                          setCustomType(type)
+                          setCustomType('')
                           handleFormSubmit(undefined, type)
                           document.getElementById('memberNameInput')?.focus()
                         }
@@ -610,9 +610,9 @@ export default function DonationTrackerPage() {
                 <label className="block text-sm font-semibold text-slate-500 dark:text-slate-400 mb-1">
                   <span>{t('tracker.customInput')}</span>
                 </label>
-                <input 
-                  type="text" 
-                  value={customType}
+                <input
+                  type="text"
+                  value={customType || getDisplayType(selectedType)}
                   onChange={e => {
                     setCustomType(e.target.value)
                     setSelectedType(e.target.value.trim())
