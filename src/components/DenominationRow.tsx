@@ -31,7 +31,7 @@ function DenominationControls({ count, onChange, onInput, color, denomination }:
       <div className={`p-1 rounded-md border ${colorClasses[color].container} w-full`}>
         <input
           type="number"
-          inputMode="decimal"
+          inputMode="numeric"
           min="0"
           max="999"
           id={`denomination-${denomination}-${color}`}
@@ -40,10 +40,10 @@ function DenominationControls({ count, onChange, onInput, color, denomination }:
           key={count} // Force re-render on external update
           defaultValue={count === 0 ? '' : count}
           placeholder="0"
-          onBlur={(e) => onInput(Math.max(0, Math.min(999, parseInt(e.target.value) || 0)))}
+          onBlur={(e) => onInput(Math.max(0, Math.min(999, parseInt(e.target.value, 10) || 0)))}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
-              onInput(Math.max(0, Math.min(999, parseInt(e.currentTarget.value) || 0)))
+              onInput(Math.max(0, Math.min(999, parseInt(e.currentTarget.value, 10) || 0)))
               e.currentTarget.blur()
             }
           }}
