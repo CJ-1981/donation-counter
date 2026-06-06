@@ -35,28 +35,29 @@ Church donation tracking web app with two main features: **Cash Counter** and **
 
 ```
 donation-counter/
-├── index.html          # Entire application (React 19 + vanilla JS)
-├── build.js            # Encrypts member names, outputs dist/
-├── package.json        # crypto-js dependency (for build only)
-├── CODEMAP.md          # Detailed code reference with line numbers
-├── .github/
-│   └── workflows/
-│       └── deploy.yml  # CI/CD → GitHub Pages
-└── README.md           # This file
+├── src/                # React source code
+│   ├── components/     # Reusable UI components
+│   ├── config/         # App configuration (currency, types)
+│   ├── contexts/       # React contexts (FontSize, Theme)
+│   ├── locales/        # i18next JSON translations
+│   ├── pages/          # CashCounterPage, DonationTrackerPage
+│   └── App.tsx         # Main entry component
+├── package.json        # Dependencies (React, Vite, Tailwind, crypto-js)
+├── build.cjs           # Encrypts member names, injects into index.html
+├── vite.config.ts      # Vite configuration
+└── index.html          # HTML entry point template
 ```
 
 ### Tech Stack
-- **Frontend**: React 19, Tailwind CSS, shadcn/ui, Radix UI, i18next
-- **Tracker**: Vanilla JavaScript
+- **Frontend**: React 19, Vite, Tailwind CSS, shadcn/ui, Radix UI, i18next
 - **Encryption**: CryptoJS AES
 - **CD**: GitHub Actions → GitHub Pages
 
 ### How It Works
-- `index.html` is the source file containing both the React Cash Counter and the vanilla JS Donation Tracker
-- `build.js` encrypts member names using `MEMBERS` and `MEMBER_KEY` environment variables
-- GitHub Actions runs `build.js`, producing `dist/index.html` with the encrypted data
-- The built `dist/index.html` is deployed to GitHub Pages
-- Users enter the decryption key in the app to unlock member auto-suggestion
+- The entire application is a modular React SPA built with Vite.
+- Local storage is heavily utilized to persist states, logs, and settings across sessions.
+- `build.cjs` acts as a pre-deploy hook: it pulls the compiled `dist/index.html` from Vite, reads `MEMBERS` and `MEMBER_KEY` environment variables, encrypts the database, and injects it back into the production index file.
+- Users must provide the decryption key at runtime inside the tracker tab to unlock the member auto-completion database.
 
 ## Setup
 
@@ -74,18 +75,21 @@ Set these in your repository settings (Settings → Secrets and variables → Ac
 
 ### Local Development
 ```bash
-# Install dependencies (for build script only)
+# Install dependencies
 npm install
 
-# Build with local env vars (optional)
-MEMBERS='["name1","name2"]' MEMBER_KEY='your-key' node build.js
+# Start local Vite development server
+npm run dev
 
-# Or simply open index.html directly in a browser
-# (auto-suggestion will be disabled without encrypted data)
+# Build for production and inject encrypted members
+MEMBERS='[{"name":"John"}]' MEMBER_KEY='secret' npm run build
+
+# Preview production build locally
+npm run preview
 ```
 
 ### Deployment
-Push to `main` branch — GitHub Actions automatically builds and deploys to GitHub Pages.
+Push to `main` branch — GitHub Actions automatically triggers `npm run build` and deploys the `dist/` directory to GitHub Pages.
 
 ## Development Reference
 
