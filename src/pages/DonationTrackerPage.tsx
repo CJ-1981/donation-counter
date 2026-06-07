@@ -124,6 +124,28 @@ export default function DonationTrackerPage() {
   const [isUnlocked, setIsUnlocked] = useState(false)
   const [showKeyModal, setShowKeyModal] = useState(false)
   const [keyInput, setKeyInput] = useState('')
+
+  // Auto-unlock from cached key (PWA / returning user)
+  useEffect(() => {
+    try {
+      const cachedKey = localStorage.getItem('church_member_key')
+      if (cachedKey) {
+        // @ts-expect-error window extension
+        const encrypted = window.ENCRYPTED_MEMBERS
+        const decrypted = CryptoJS.AES.decrypt(encrypted, cachedKey).toString(CryptoJS.enc.Utf8)
+        if (decrypted) {
+          const parsed = JSON.parse(decrypted)
+          if (Array.isArray(parsed) && parsed.length > 0 && parsed.every(item => typeof item === 'string')) {
+            setMembers(parsed)
+            setIsUnlocked(true)
+          }
+        }
+      }
+    } catch {
+      // Cached key invalid, clear it
+      localStorage.removeItem('church_member_key')
+    }
+  }, [])
   const [showDropdown, setShowDropdown] = useState(false)
   const [focusedSearchIndex, setFocusedSearchIndex] = useState(-1)
   const searchDropdownRef = useRef<HTMLDivElement>(null)
@@ -183,6 +205,8 @@ export default function DonationTrackerPage() {
           setMembers(parsed)
           setIsUnlocked(true)
           setShowKeyModal(false)
+          // Cache key for PWA / returning users
+          localStorage.setItem('church_member_key', keyInput)
           setKeyInput('')
           return
         }

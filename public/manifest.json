@@ -1,0 +1,18 @@
+{
+  "name": "Donation Counter",
+  "short_name": "Donate",
+  "description": "Church donation tracker and cash counter",
+  "start_url": "/donation-counter/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#863bff",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
