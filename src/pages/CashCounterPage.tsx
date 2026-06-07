@@ -560,7 +560,7 @@ export default function CashCounterPage() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
       {/* Header */}
-      <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-50 no-scale">
+      <header ref={settingsPanelRef} className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-50 no-scale">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
@@ -586,13 +586,11 @@ export default function CashCounterPage() {
 
         {/* Settings Panel */}
         {showConfig && (
-          <div ref={settingsPanelRef}>
           <SettingsPanel 
             currency={currency} 
             targetAmount={config.targetAmount} 
             onTargetAmountChange={(amount) => saveConfig(prev => ({ ...prev, targetAmount: amount }))} 
           />
-          </div>
         )}
       </header>
 
