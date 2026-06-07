@@ -508,7 +508,7 @@ export default function DonationTrackerPage() {
               <div className="flex justify-between items-center mb-1">
                 <label className="block text-lg font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
                   <span>{t('tracker.name')}</span>
-                  <button type="button" onClick={() => setShowKeyModal(true)} className="text-slate-400 hover:text-violet-600 dark:hover:text-violet-400 p-0.5 rounded transition-all hover:bg-violet-50 dark:hover:bg-violet-900/30">
+                  <button type="button" tabIndex={-1} onClick={() => setShowKeyModal(true)} className="text-slate-400 hover:text-violet-600 dark:hover:text-violet-400 p-0.5 rounded transition-all hover:bg-violet-50 dark:hover:bg-violet-900/30">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       {isUnlocked ? (
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
@@ -529,7 +529,7 @@ export default function DonationTrackerPage() {
                     </span>
                   )}
                 </label>
-                <button type="button" onClick={() => { setNameInput('__anonymous__'); setShowDropdown(false) }} className="bg-violet-100 dark:bg-violet-900/40 hover:bg-violet-200 dark:hover:bg-violet-900/60 active:scale-[0.97] text-violet-950 dark:text-violet-100 text-sm font-extrabold px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 touch-target">
+                <button type="button" tabIndex={-1} onClick={() => { setNameInput('__anonymous__'); setShowDropdown(false) }} className="bg-violet-100 dark:bg-violet-900/40 hover:bg-violet-200 dark:hover:bg-violet-900/60 active:scale-[0.97] text-violet-950 dark:text-violet-100 text-sm font-extrabold px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 touch-target">
                   <span>{t('tracker.anonymous')}</span>
                 </button>
               </div>
@@ -537,6 +537,7 @@ export default function DonationTrackerPage() {
                 <input 
                   type="text" 
                   id="memberNameInput"
+                  tabIndex={1}
                   value={nameInput === '__anonymous__' ? t('tracker.anonymousRaw') : nameInput}
                   onChange={(e) => {
                     const val = e.target.value
@@ -547,7 +548,7 @@ export default function DonationTrackerPage() {
                   placeholder={t('tracker.name')} 
                   className="w-full text-lg md:text-xl p-4 border-2 border-slate-300 dark:border-slate-600 rounded-xl focus:ring-4 focus:ring-violet-500/20 focus:border-violet-600 outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500 font-medium dark:bg-slate-900 dark:text-slate-100"
                 />
-                <button type="button" onClick={() => { setNameInput(''); setShowDropdown(false) }} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1">
+                <button type="button" tabIndex={-1} onClick={() => { setNameInput(''); setShowDropdown(false) }} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
               </div>
@@ -590,6 +591,7 @@ export default function DonationTrackerPage() {
                 <input 
                   type="number" 
                   id="donationAmount"
+                  tabIndex={2}
                   inputMode="decimal" 
                   step="any" 
                   min="0.01" 
@@ -597,9 +599,21 @@ export default function DonationTrackerPage() {
                   placeholder="0.00" 
                   value={amountInput}
                   onChange={e => setAmountInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      document.getElementById('customTypeInput')?.focus()
+                    } else if (e.key === 'ArrowDown') {
+                      e.preventDefault()
+                      document.getElementById('customTypeInput')?.focus()
+                    } else if (e.key === 'ArrowUp') {
+                      e.preventDefault()
+                      document.getElementById('memberNameInput')?.focus()
+                    }
+                  }}
                   className="w-full text-2xl font-bold p-4 pr-12 border-2 border-slate-300 dark:border-slate-600 rounded-xl focus:ring-4 focus:ring-violet-500/20 focus:border-violet-600 outline-none transition-all placeholder:text-slate-300 dark:bg-slate-900 dark:text-slate-100"
                 />
-                <button type="button" onClick={() => setAmountInput('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1">
+                <button type="button" tabIndex={-1} onClick={() => setAmountInput('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
               </div>
@@ -618,10 +632,11 @@ export default function DonationTrackerPage() {
                     <button
                       key={type}
                       type="button"
-                      tabIndex={0}
+                      tabIndex={-1}
                       onClick={() => {
                         setSelectedType(type)
                         setCustomType('')
+                        document.getElementById('customTypeInput')?.focus()
                       }}
                       onKeyDown={(e) => {
                         if (e.key === ' ' || e.key === 'Spacebar') {
@@ -655,10 +670,25 @@ export default function DonationTrackerPage() {
                 </label>
                 <input
                   type="text"
+                  id="customTypeInput"
+                  tabIndex={3}
                   value={customType || getDisplayType(selectedType)}
                   onChange={e => {
                     setCustomType(e.target.value)
                     setSelectedType(e.target.value.trim())
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      handleFormSubmit(undefined)
+                      document.getElementById('memberNameInput')?.focus()
+                    } else if (e.key === 'ArrowDown') {
+                      e.preventDefault()
+                      document.getElementById('memberNameInput')?.focus()
+                    } else if (e.key === 'ArrowUp') {
+                      e.preventDefault()
+                      document.getElementById('donationAmount')?.focus()
+                    }
                   }}
                   placeholder={t('tracker.customInputPlaceholder')}
                   className="w-full text-lg p-3.5 border-2 border-slate-300 dark:border-slate-600 rounded-xl focus:ring-4 focus:ring-violet-500/20 focus:border-violet-600 outline-none transition-all font-semibold placeholder:text-slate-400 bg-slate-50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-800 dark:text-slate-100"
@@ -666,7 +696,7 @@ export default function DonationTrackerPage() {
               </div>
             </div>
 
-            <button type="submit" tabIndex={0} className="w-full bg-violet-600 hover:bg-violet-700 active:scale-[0.98] text-white font-extrabold text-xl py-4 rounded-xl shadow-lg shadow-violet-600/15 transition-all flex items-center justify-center gap-3 mt-4 focus:outline-none focus:ring-4 focus:ring-violet-500/40">
+            <button type="submit" tabIndex={-1} className="w-full bg-violet-600 hover:bg-violet-700 active:scale-[0.98] text-white font-extrabold text-xl py-4 rounded-xl shadow-lg shadow-violet-600/15 transition-all flex items-center justify-center gap-3 mt-4 focus:outline-none focus:ring-4 focus:ring-violet-500/40">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
               <span>{t('tracker.submit')}</span>
             </button>
