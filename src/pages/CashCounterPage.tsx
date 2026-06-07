@@ -60,7 +60,6 @@ import { LanguageSelector } from '../components/LanguageSelector'
 import { CurrencySelector } from '../components/CurrencySelector'
 import { DenominationRow } from '../components/DenominationRow'
 import { SettingsPanel } from '../components/SettingsPanel'
-import { FieldNavToolbar } from '../components/FieldNavToolbar'
 
 // ==================== UTILITY FUNCTIONS ====================
 
@@ -796,9 +795,6 @@ export default function CashCounterPage() {
           </div>
         </>
       )}
-
-      {/* Mobile field navigation toolbar — works around iOS Safari chevron limitation */}
-      <FieldNavToolbar fieldIds={allFieldIds} onFocusField={onFocusField} />
     </div>
   )
 }
