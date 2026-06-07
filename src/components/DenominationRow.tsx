@@ -8,9 +8,12 @@ interface DenominationControlsProps {
   onInput: (value: number) => void
   color: 'teal' | 'blue'
   denomination: number
+  tabIndex: number
+  fieldIds: string[]
+  onFocusField: (id: string) => void
 }
 
-function DenominationControls({ count, onChange, onInput, color, denomination }: DenominationControlsProps) {
+function DenominationControls({ count, onChange, onInput, color, denomination, tabIndex, fieldIds, onFocusField }: DenominationControlsProps) {
   const colorClasses = {
     teal: {
       minus: 'bg-red-500 hover:bg-red-600 disabled:bg-red-300',
@@ -26,6 +29,20 @@ function DenominationControls({ count, onChange, onInput, color, denomination }:
     },
   }
 
+  const fieldId = `denomination-${denomination}-${color}`
+
+  const navigateField = (direction: 'next' | 'prev') => {
+    const currentIdx = fieldIds.indexOf(fieldId)
+    if (currentIdx === -1) return
+    let nextIdx: number
+    if (direction === 'next') {
+      nextIdx = (currentIdx + 1) % fieldIds.length
+    } else {
+      nextIdx = (currentIdx - 1 + fieldIds.length) % fieldIds.length
+    }
+    onFocusField(fieldIds[nextIdx])
+  }
+
   return (
     <div className="flex flex-col gap-1 items-center">
       <div className={`p-1 rounded-md border ${colorClasses[color].container} w-full`}>
@@ -34,8 +51,9 @@ function DenominationControls({ count, onChange, onInput, color, denomination }:
           inputMode="numeric"
           min="0"
           max="999"
-          id={`denomination-${denomination}-${color}`}
-          name={`denomination-${denomination}-${color}`}
+          id={fieldId}
+          name={fieldId}
+          tabIndex={tabIndex}
           className={`text-center font-semibold w-full border rounded focus:outline-none focus:ring-2 py-1 px-2 ${colorClasses[color].input}`}
           key={count} // Force re-render on external update
           defaultValue={count === 0 ? '' : count}
@@ -43,8 +61,23 @@ function DenominationControls({ count, onChange, onInput, color, denomination }:
           onBlur={(e) => onInput(Math.max(0, Math.min(999, parseInt(e.target.value, 10) || 0)))}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
+              e.preventDefault()
               onInput(Math.max(0, Math.min(999, parseInt(e.currentTarget.value, 10) || 0)))
-              e.currentTarget.blur()
+              navigateField('next')
+            } else if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+              // Prevent default number spinner behavior, use for field navigation
+              if (e.key === 'ArrowDown') {
+                e.preventDefault()
+                navigateField('next')
+              }
+            } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+              if (e.key === 'ArrowUp') {
+                e.preventDefault()
+                navigateField('prev')
+              }
+            } else if (e.key === 'Tab') {
+              // Let Tab handle naturally but force blur to commit value
+              onInput(Math.max(0, Math.min(999, parseInt(e.currentTarget.value, 10) || 0)))
             }
           }}
         />
@@ -52,16 +85,26 @@ function DenominationControls({ count, onChange, onInput, color, denomination }:
       <div className="flex gap-1 items-center w-full justify-center">
         <button
           type="button"
+          tabIndex={-1}
           className={`w-8 h-8 rounded ${colorClasses[color].minus} text-white font-bold text-xs disabled:opacity-30 flex items-center justify-center`}
-          onClick={() => onChange(-1)}
+          onClick={() => {
+            onChange(-1)
+            // Re-focus the input so Safari mobile keyboard stays open
+            onFocusField(fieldId)
+          }}
           disabled={count === 0}
         >
           −
         </button>
         <button
           type="button"
+          tabIndex={-1}
           className={`w-8 h-8 rounded ${colorClasses[color].plus} text-white font-bold text-xs flex items-center justify-center`}
-          onClick={() => onChange(1)}
+          onClick={() => {
+            onChange(1)
+            // Re-focus the input so Safari mobile keyboard stays open
+            onFocusField(fieldId)
+          }}
         >
           +
         </button>
@@ -79,6 +122,14 @@ export interface DenominationRowProps {
   onNamedInput: (value: number) => void
   onAnonymousChange: (delta: number) => void
   onAnonymousInput: (value: number) => void
+  /** Sequential tabIndex for the named input */
+  namedTabIndex: number
+  /** Sequential tabIndex for the anonymous input */
+  anonymousTabIndex: number
+  /** Ordered list of all field IDs for keyboard loop navigation */
+  allFieldIds: string[]
+  /** Callback to programmatically focus a field by ID */
+  onFocusField: (id: string) => void
 }
 
 export function DenominationRow({
@@ -89,7 +140,11 @@ export function DenominationRow({
   onNamedChange,
   onNamedInput,
   onAnonymousChange,
-  onAnonymousInput
+  onAnonymousInput,
+  namedTabIndex,
+  anonymousTabIndex,
+  allFieldIds,
+  onFocusField
 }: DenominationRowProps) {
   const emoji = getCurrencyEmoji(currency, denomination.type)
 
@@ -105,6 +160,9 @@ export function DenominationRow({
           onInput={onNamedInput}
           color="blue"
           denomination={denomination.value}
+          tabIndex={namedTabIndex}
+          fieldIds={allFieldIds}
+          onFocusField={onFocusField}
         />
         <DenominationControls
           count={anonymousCount}
@@ -112,6 +170,9 @@ export function DenominationRow({
           onInput={onAnonymousInput}
           color="teal"
           denomination={denomination.value}
+          tabIndex={anonymousTabIndex}
+          fieldIds={allFieldIds}
+          onFocusField={onFocusField}
         />
       </div>
       <div className="grid grid-cols-[1fr_1fr] gap-2 mt-1">

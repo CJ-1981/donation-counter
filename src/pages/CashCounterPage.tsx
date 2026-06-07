@@ -11,7 +11,7 @@
 // @MX:TODO: No test file exists - CashCounterPage.test.tsx or CashCounterPage.spec.tsx needed
 // @MX:PRIORITY: High - Public route component requires test coverage
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
 
@@ -530,7 +530,19 @@ export default function CashCounterPage() {
   const currency = config.currency
   const matchStatus = getMatchStatus()
 
+  // Build ordered list of all denomination field IDs for loop navigation
+  const allFieldIds = useMemo(() => {
+    const ids: string[] = []
+    for (const d of [...bills, ...coins]) {
+      ids.push(`denomination-${d.value}-blue`)
+      ids.push(`denomination-${d.value}-teal`)
+    }
+    return ids
+  }, [bills, coins])
 
+  const onFocusField = useCallback((fieldId: string) => {
+    document.getElementById(fieldId)?.focus()
+  }, [])
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
@@ -589,7 +601,7 @@ export default function CashCounterPage() {
 
         {/* Bills Section */}
         <div className="mb-6">
-          {bills.map((denom) => (
+          {bills.map((denom, idx) => (
             <DenominationRow 
               key={denom.value} 
               denomination={denom} 
@@ -600,13 +612,17 @@ export default function CashCounterPage() {
               onNamedInput={(value) => handleNamedDirectInput(denom.value, value)}
               onAnonymousChange={(delta) => handleAnonymousCountChange(denom.value, delta)}
               onAnonymousInput={(value) => handleAnonymousDirectInput(denom.value, value)}
+              namedTabIndex={idx * 2 + 1}
+              anonymousTabIndex={idx * 2 + 2}
+              allFieldIds={allFieldIds}
+              onFocusField={onFocusField}
             />
           ))}
         </div>
 
         {/* Coins Section */}
         <div className="mb-6">
-          {coins.map((denom) => (
+          {coins.map((denom, idx) => (
             <DenominationRow 
               key={denom.value} 
               denomination={denom} 
@@ -617,6 +633,10 @@ export default function CashCounterPage() {
               onNamedInput={(value) => handleNamedDirectInput(denom.value, value)}
               onAnonymousChange={(delta) => handleAnonymousCountChange(denom.value, delta)}
               onAnonymousInput={(value) => handleAnonymousDirectInput(denom.value, value)}
+              namedTabIndex={(bills.length + idx) * 2 + 1}
+              anonymousTabIndex={(bills.length + idx) * 2 + 2}
+              allFieldIds={allFieldIds}
+              onFocusField={onFocusField}
             />
           ))}
         </div>
