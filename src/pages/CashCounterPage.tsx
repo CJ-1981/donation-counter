@@ -157,7 +157,21 @@ export default function CashCounterPage() {
   const [copySuccess, setCopySuccess] = useState(false)
   const [copyError, setCopyError] = useState(false)
   const [showConfig, setShowConfig] = useState(false)
+  const settingsPanelRef = useRef<HTMLDivElement>(null)
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+
+  // Close settings when clicking outside
+  useEffect(() => {
+    if (!showConfig) return
+    const handleClickOutside = (e: MouseEvent) => {
+      if (settingsPanelRef.current && !settingsPanelRef.current.contains(e.target as Node)) {
+        setShowConfig(false)
+      }
+    }
+    // Use mousedown for immediate response (before focus changes)
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showConfig])
 
   // Refs for localStorage save optimization
   const isInitialRender = useRef(true)
@@ -572,11 +586,13 @@ export default function CashCounterPage() {
 
         {/* Settings Panel */}
         {showConfig && (
+          <div ref={settingsPanelRef}>
           <SettingsPanel 
             currency={currency} 
             targetAmount={config.targetAmount} 
             onTargetAmountChange={(amount) => saveConfig(prev => ({ ...prev, targetAmount: amount }))} 
           />
+          </div>
         )}
       </header>
 
