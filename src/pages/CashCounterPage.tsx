@@ -582,6 +582,7 @@ export default function CashCounterPage() {
 
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 py-6 scalable-content">
+        <form onSubmit={e => e.preventDefault()}>
         {/* Column Headers */}
         <div className="mb-4">
           <div className="grid grid-cols-[1fr_1fr] gap-2">
@@ -639,6 +640,7 @@ export default function CashCounterPage() {
             />
           ))}
         </div>
+        </form>
 
         {/* Section Totals */}
         <div className="grid grid-cols-2 gap-3 mb-6">
