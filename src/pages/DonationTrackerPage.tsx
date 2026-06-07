@@ -589,20 +589,28 @@ export default function DonationTrackerPage() {
               </label>
               <div className="relative">
                 <input 
-                  type="number" 
+                  type="text" 
                   id="donationAmount"
                   tabIndex={2}
                   inputMode="decimal" 
+                  enterKeyHint="go"
                   step="any" 
                   min="0.01" 
                   required 
                   placeholder="0.00" 
                   value={amountInput}
-                  onChange={e => setAmountInput(e.target.value)}
+                  onChange={e => setAmountInput(e.target.value.replace(/[^0-9.,]/g, ''))}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       e.preventDefault()
-                      document.getElementById('customTypeInput')?.focus()
+                      setAmountInput(prev => prev.replace(/[^0-9.,]/g, ''))
+                      // On mobile: submit directly. On desktop: move to custom type field.
+                      if ('ontouchstart' in window) {
+                        handleFormSubmit(undefined)
+                        document.getElementById('memberNameInput')?.focus()
+                      } else {
+                        document.getElementById('customTypeInput')?.focus()
+                      }
                     } else if (e.key === 'ArrowDown') {
                       e.preventDefault()
                       document.getElementById('customTypeInput')?.focus()
