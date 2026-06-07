@@ -530,15 +530,14 @@ export default function CashCounterPage() {
   const currency = config.currency
   const matchStatus = getMatchStatus()
 
-  // Build ordered list of all denomination field IDs for loop navigation
+  // Build ordered list: column-first — all Named (blue) top-to-bottom, then all Anonymous (teal) top-to-bottom
   const allFieldIds = useMemo(() => {
-    const ids: string[] = []
-    for (const d of [...bills, ...coins]) {
-      ids.push(`denomination-${d.value}-blue`)
-      ids.push(`denomination-${d.value}-teal`)
-    }
-    return ids
+    const allDenoms = [...bills, ...coins]
+    const named = allDenoms.map(d => `denomination-${d.value}-blue`)
+    const anonymous = allDenoms.map(d => `denomination-${d.value}-teal`)
+    return [...named, ...anonymous]
   }, [bills, coins])
+  const totalDenomCount = bills.length + coins.length
 
   const onFocusField = useCallback((fieldId: string) => {
     document.getElementById(fieldId)?.focus()
@@ -612,8 +611,8 @@ export default function CashCounterPage() {
               onNamedInput={(value) => handleNamedDirectInput(denom.value, value)}
               onAnonymousChange={(delta) => handleAnonymousCountChange(denom.value, delta)}
               onAnonymousInput={(value) => handleAnonymousDirectInput(denom.value, value)}
-              namedTabIndex={idx * 2 + 1}
-              anonymousTabIndex={idx * 2 + 2}
+              namedTabIndex={idx + 1}
+              anonymousTabIndex={totalDenomCount + idx + 1}
               allFieldIds={allFieldIds}
               onFocusField={onFocusField}
             />
@@ -633,8 +632,8 @@ export default function CashCounterPage() {
               onNamedInput={(value) => handleNamedDirectInput(denom.value, value)}
               onAnonymousChange={(delta) => handleAnonymousCountChange(denom.value, delta)}
               onAnonymousInput={(value) => handleAnonymousDirectInput(denom.value, value)}
-              namedTabIndex={(bills.length + idx) * 2 + 1}
-              anonymousTabIndex={(bills.length + idx) * 2 + 2}
+              namedTabIndex={bills.length + idx + 1}
+              anonymousTabIndex={totalDenomCount + bills.length + idx + 1}
               allFieldIds={allFieldIds}
               onFocusField={onFocusField}
             />
