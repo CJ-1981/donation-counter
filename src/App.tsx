@@ -71,7 +71,7 @@ function App() {
       
       {/* App Footer */}
       <div className="text-center py-2 text-xs font-medium text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 shrink-0">
-        v{packageJson.version} • 2026-06-06
+        v{packageJson.version} • 2026-06-07
       </div>
     </div>
   )
