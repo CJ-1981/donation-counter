@@ -617,6 +617,20 @@ export default function DonationTrackerPage() {
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
               </div>
+              {/* Quick Save — visible when amount has a value, for mobile numpad users without Return key */}
+              {parseFloat(amountInput) > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleFormSubmit(undefined)
+                    document.getElementById('memberNameInput')?.focus()
+                  }}
+                  className="w-full mt-2 bg-emerald-500 hover:bg-emerald-600 active:scale-[0.98] text-white font-extrabold text-lg py-3 rounded-xl shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2 md:hidden"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"/></svg>
+                  <span>바로 저장</span>
+                </button>
+              )}
             </div>
 
             {/* DONATION TYPES */}
