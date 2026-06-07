@@ -639,7 +639,7 @@ export default function DonationTrackerPage() {
                       handleFormSubmit(undefined)
                     } else if (e.key === 'ArrowDown') {
                       e.preventDefault()
-                      document.getElementById('customTypeInput')?.focus()
+                      document.getElementById('typeBtn-0')?.focus()
                     } else if (e.key === 'ArrowUp') {
                       e.preventDefault()
                       document.getElementById('memberNameInput')?.focus()
@@ -674,13 +674,14 @@ export default function DonationTrackerPage() {
               </label>
               
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {donationTypes.map(type => {
+                {donationTypes.map((type, idx) => {
                   const isActive = selectedType === type
                   return (
                     <button
                       key={type}
                       type="button"
-                      tabIndex={-1}
+                      id={`typeBtn-${idx}`}
+                      tabIndex={10 + idx}
                       onClick={() => {
                         setSelectedType(type)
                         setCustomType('')
@@ -696,6 +697,16 @@ export default function DonationTrackerPage() {
                           setCustomType('')
                           handleFormSubmit(undefined, type)
                           document.getElementById('memberNameInput')?.focus()
+                        } else if (e.key === 'ArrowDown') {
+                          e.preventDefault()
+                          const next = document.getElementById(`typeBtn-${idx + 1}`)
+                          if (next) next.focus()
+                          else document.getElementById('customTypeInput')?.focus()
+                        } else if (e.key === 'ArrowUp') {
+                          e.preventDefault()
+                          const prev = document.getElementById(`typeBtn-${idx - 1}`)
+                          if (prev) prev.focus()
+                          else document.getElementById('donationAmount')?.focus()
                         }
                       }}
                       className={`p-3.5 font-bold text-base md:text-lg rounded-xl border-2 transition-all touch-target flex justify-between items-center focus:outline-none focus:ring-4 focus:ring-violet-500/40 focus:border-violet-600 ${
@@ -718,7 +729,7 @@ export default function DonationTrackerPage() {
                 <input
                   type="text"
                   id="customTypeInput"
-                  tabIndex={3}
+                  tabIndex={10 + donationTypes.length}
                   value={customType || getDisplayType(selectedType)}
                   onChange={e => {
                     setCustomType(e.target.value)
