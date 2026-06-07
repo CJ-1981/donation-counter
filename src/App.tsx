@@ -11,6 +11,8 @@ function App() {
   const touchStartX = useRef<number | null>(null)
   const touchStartY = useRef<number | null>(null)
   const isSwiping = useRef(false)
+  const cashScrollRef = useRef<HTMLDivElement>(null)
+  const donationScrollRef = useRef<HTMLDivElement>(null)
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX
@@ -52,6 +54,21 @@ function App() {
     }
   }, [])
 
+  const getActiveScrollRef = useCallback(() => {
+    return activeTab === 'cash-counter' ? cashScrollRef : donationScrollRef
+  }, [activeTab])
+
+  const scrollToTop = useCallback(() => {
+    getActiveScrollRef().current?.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [getActiveScrollRef])
+
+  const scrollToBottom = useCallback(() => {
+    const el = getActiveScrollRef().current
+    if (el) {
+      el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
+    }
+  }, [getActiveScrollRef])
+
   return (
     <div
       className="flex flex-col h-screen overflow-hidden bg-slate-50 dark:bg-slate-950 dark:text-slate-100"
@@ -62,16 +79,34 @@ function App() {
       <Tabs activeTab={activeTab} onTabChange={setActiveTab} />
       
       {/* Tab Content Containers */}
-      <div className={`flex-1 overflow-y-auto w-full relative ${activeTab === 'cash-counter' ? 'block' : 'hidden'}`}>
+      <div ref={cashScrollRef} className={`flex-1 overflow-y-auto w-full relative ${activeTab === 'cash-counter' ? 'block' : 'hidden'}`}>
         <CashCounterPage />
       </div>
-      <div className={`flex-1 overflow-y-auto w-full ${activeTab === 'donation-tracker' ? 'block' : 'hidden'}`}>
+      <div ref={donationScrollRef} className={`flex-1 overflow-y-auto w-full ${activeTab === 'donation-tracker' ? 'block' : 'hidden'}`}>
         <DonationTrackerPage />
       </div>
       
       {/* App Footer */}
-      <div className="text-center py-2 text-xs font-medium text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 shrink-0">
-        v{packageJson.version} • 2026-06-07
+      <div className="flex items-center justify-between px-3 py-2 bg-slate-100 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 shrink-0">
+        <button
+          type="button"
+          onClick={scrollToTop}
+          className="p-1.5 text-slate-400 dark:text-slate-500 hover:text-violet-600 dark:hover:text-violet-400 active:scale-90 transition-all"
+          aria-label="Scroll to top"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 15l7-7 7 7"/></svg>
+        </button>
+        <span className="text-xs font-medium text-slate-400 dark:text-slate-500">
+          v{packageJson.version} • 2026-06-07
+        </span>
+        <button
+          type="button"
+          onClick={scrollToBottom}
+          className="p-1.5 text-slate-400 dark:text-slate-500 hover:text-violet-600 dark:hover:text-violet-400 active:scale-90 transition-all"
+          aria-label="Scroll to bottom"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"/></svg>
+        </button>
       </div>
     </div>
   )
