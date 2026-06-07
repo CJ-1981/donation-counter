@@ -529,7 +529,7 @@ export default function DonationTrackerPage() {
                     </span>
                   )}
                 </label>
-                <button type="button" tabIndex={-1} onClick={() => { setNameInput('__anonymous__'); setShowDropdown(false) }} className="bg-violet-100 dark:bg-violet-900/40 hover:bg-violet-200 dark:hover:bg-violet-900/60 active:scale-[0.97] text-violet-950 dark:text-violet-100 text-sm font-extrabold px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 touch-target">
+                <button type="button" tabIndex={-1} onClick={() => { setNameInput('__anonymous__'); setShowDropdown(false); document.getElementById('donationAmount')?.focus() }} className="bg-violet-100 dark:bg-violet-900/40 hover:bg-violet-200 dark:hover:bg-violet-900/60 active:scale-[0.97] text-violet-950 dark:text-violet-100 text-sm font-extrabold px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 touch-target">
                   <span>{t('tracker.anonymous')}</span>
                 </button>
               </div>
