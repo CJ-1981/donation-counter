@@ -569,6 +569,7 @@ export default function DonationTrackerPage() {
                     setShowDropdown(true)
                   }}
                   onKeyDown={handleSearchKeydown}
+                  onBlur={() => setShowDropdown(false)}
                   placeholder={t('tracker.name')} 
                   className="w-full text-lg md:text-xl p-4 border-2 border-slate-300 dark:border-slate-600 rounded-xl focus:ring-4 focus:ring-violet-500/20 focus:border-violet-600 outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500 font-medium dark:bg-slate-900 dark:text-slate-100"
                 />
@@ -626,7 +627,7 @@ export default function DonationTrackerPage() {
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       e.preventDefault()
-                      document.getElementById('customTypeInput')?.focus()
+                      handleFormSubmit(undefined)
                     } else if (e.key === 'ArrowDown') {
                       e.preventDefault()
                       document.getElementById('customTypeInput')?.focus()

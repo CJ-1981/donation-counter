@@ -173,6 +173,11 @@ export default function CashCounterPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [showConfig])
 
+  const handleGearClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation()
+    setShowConfig(prev => !prev)
+  }, [])
+
   // Refs for localStorage save optimization
   const isInitialRender = useRef(true)
   const previousStateRef = useRef<CashCounterState>(state)
@@ -574,7 +579,7 @@ export default function CashCounterPage() {
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setShowConfig(!showConfig)}
+              onClick={handleGearClick}
               className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
               title="Settings"
             >
