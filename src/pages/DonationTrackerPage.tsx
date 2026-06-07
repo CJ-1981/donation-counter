@@ -150,6 +150,7 @@ export default function DonationTrackerPage() {
   const [focusedSearchIndex, setFocusedSearchIndex] = useState(-1)
   const searchDropdownRef = useRef<HTMLDivElement>(null)
   const keyInputRef = useRef<HTMLInputElement>(null)
+  const skipDropdownOpenRef = useRef(false)
   
   useEffect(() => {
     if (showKeyModal && keyInputRef.current) {
@@ -273,6 +274,11 @@ export default function DonationTrackerPage() {
   // We intentionally omit `setShowDropdown` and `setFocusedSearchIndex` from dependencies 
   // because this effect is strictly for responding to input changes, not reacting to its own state updates.
   useEffect(() => {
+    // Skip reopening dropdown after Enter/Tab selection or dropdown item click
+    if (skipDropdownOpenRef.current) {
+      skipDropdownOpenRef.current = false
+      return
+    }
     if (query === '' || query === '__anonymous__' || query === t('tracker.anonymousRaw')) {
       // Hide automatically when cleared. User can bring up history via arrow keys.
       setShowDropdown(false)
@@ -308,6 +314,7 @@ export default function DonationTrackerPage() {
       setFocusedSearchIndex(prev => (prev > 0 ? prev - 1 : 0))
     } else if (e.key === 'Enter') {
       e.preventDefault()
+      skipDropdownOpenRef.current = true
       if (showDropdown && searchResults.length > 0 && focusedSearchIndex >= 0) {
         setNameInput(searchResults[focusedSearchIndex].name)
       } else if (showDropdown && searchResults.length > 0) {
@@ -322,6 +329,7 @@ export default function DonationTrackerPage() {
     } else if (e.key === 'Tab') {
       if (!nameInput.trim()) {
         e.preventDefault()
+        skipDropdownOpenRef.current = true
         setNameInput('__anonymous__')
         setShowDropdown(false)
         document.getElementById('donationAmount')?.focus()
@@ -586,6 +594,7 @@ export default function DonationTrackerPage() {
                       key={result.name}
                       onMouseDown={(e) => {
                         e.preventDefault()
+                        skipDropdownOpenRef.current = true
                         setNameInput(result.name)
                         setShowDropdown(false)
                         document.getElementById('donationAmount')?.focus()
