@@ -47,10 +47,9 @@ function DenominationControls({ count, onChange, onInput, color, denomination, t
     <div className="flex flex-col gap-1 items-center">
       <div className={`p-1 rounded-md border ${colorClasses[color].container} w-full`}>
         <input
-          type="number"
+          type="text"
           inputMode="numeric"
-          min="0"
-          max="999"
+          pattern="[0-9]*"
           id={fieldId}
           name={fieldId}
           tabIndex={tabIndex}
@@ -58,26 +57,29 @@ function DenominationControls({ count, onChange, onInput, color, denomination, t
           key={count} // Force re-render on external update
           defaultValue={count === 0 ? '' : count}
           placeholder="0"
-          onBlur={(e) => onInput(Math.max(0, Math.min(999, parseInt(e.target.value, 10) || 0)))}
+          onBlur={(e) => {
+            const val = e.target.value.replace(/[^0-9]/g, '')
+            onInput(Math.max(0, Math.min(999, parseInt(val, 10) || 0)))
+          }}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               e.preventDefault()
-              onInput(Math.max(0, Math.min(999, parseInt(e.currentTarget.value, 10) || 0)))
+              const val = e.currentTarget.value.replace(/[^0-9]/g, '')
+              onInput(Math.max(0, Math.min(999, parseInt(val, 10) || 0)))
               navigateField('next')
-            } else if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
-              // Prevent default number spinner behavior, use for field navigation
-              if (e.key === 'ArrowDown') {
-                e.preventDefault()
-                navigateField('next')
-              }
-            } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
-              if (e.key === 'ArrowUp') {
-                e.preventDefault()
-                navigateField('prev')
-              }
+            } else if (e.key === 'ArrowDown') {
+              e.preventDefault()
+              const val = e.currentTarget.value.replace(/[^0-9]/g, '')
+              onInput(Math.max(0, Math.min(999, parseInt(val, 10) || 0)))
+              navigateField('next')
+            } else if (e.key === 'ArrowUp') {
+              e.preventDefault()
+              const val = e.currentTarget.value.replace(/[^0-9]/g, '')
+              onInput(Math.max(0, Math.min(999, parseInt(val, 10) || 0)))
+              navigateField('prev')
             } else if (e.key === 'Tab') {
-              // Let Tab handle naturally but force blur to commit value
-              onInput(Math.max(0, Math.min(999, parseInt(e.currentTarget.value, 10) || 0)))
+              const val = e.currentTarget.value.replace(/[^0-9]/g, '')
+              onInput(Math.max(0, Math.min(999, parseInt(val, 10) || 0)))
             }
           }}
         />
