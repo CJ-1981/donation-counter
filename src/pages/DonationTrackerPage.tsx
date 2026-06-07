@@ -650,7 +650,6 @@ export default function DonationTrackerPage() {
                       onClick={() => {
                         setSelectedType(type)
                         setCustomType('')
-                        document.getElementById('customTypeInput')?.focus()
                       }}
                       onKeyDown={(e) => {
                         if (e.key === ' ' || e.key === 'Spacebar') {
