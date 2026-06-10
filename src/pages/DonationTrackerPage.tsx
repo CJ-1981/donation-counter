@@ -28,7 +28,9 @@ function getChosung(str: string) {
 }
 
 export default function DonationTrackerPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+
+  const formatAmount = (val: number) => val.toLocaleString(i18n.language === 'ko' ? 'ko-KR' : 'de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
   // Setup state
   const [members, setMembers] = useState<string[]>([])
@@ -125,13 +127,17 @@ export default function DonationTrackerPage() {
   const [showKeyModal, setShowKeyModal] = useState(false)
   const [keyInput, setKeyInput] = useState('')
 
+  const PLACEHOLDER = '__ENCRYPTED_MEMBERS_PLACEHOLDER__'
+
   // Auto-unlock from cached key (PWA / returning user)
   useEffect(() => {
     try {
       const cachedKey = localStorage.getItem('church_member_key')
+      // SECURITY NOTE: Cached key from previous session. See security note below on storage.
       if (cachedKey) {
         // @ts-expect-error window extension
         const encrypted = window.ENCRYPTED_MEMBERS
+        if (!encrypted || encrypted === PLACEHOLDER) return
         const decrypted = CryptoJS.AES.decrypt(encrypted, cachedKey).toString(CryptoJS.enc.Utf8)
         if (decrypted) {
           const parsed = JSON.parse(decrypted)
@@ -175,7 +181,7 @@ export default function DonationTrackerPage() {
     description: '',
     isConfirm: false,
     onConfirm: null,
-    confirmText: t('확인')
+    confirmText: t('common.ok')
   })
 
   // Toast State
@@ -199,6 +205,7 @@ export default function DonationTrackerPage() {
       // @ts-expect-error window extension
       // Read the global variable injected by build.cjs into index.html
       const encrypted = window.ENCRYPTED_MEMBERS
+      if (!encrypted || encrypted === PLACEHOLDER) return
       const decrypted = CryptoJS.AES.decrypt(encrypted, keyInput).toString(CryptoJS.enc.Utf8)
       if (decrypted) {
         const parsed = JSON.parse(decrypted)
@@ -206,7 +213,9 @@ export default function DonationTrackerPage() {
           setMembers(parsed)
           setIsUnlocked(true)
           setShowKeyModal(false)
-          // Cache key for PWA / returning users
+          // SECURITY NOTE: Key is cached in localStorage for PWA convenience (auto-unlock on relaunch).
+          // Trade-off: localStorage is accessible to any JS on the same origin.
+          // For higher security, use sessionStorage instead (clears on tab close).
           localStorage.setItem('church_member_key', keyInput)
           setKeyInput('')
           return
@@ -218,11 +227,11 @@ export default function DonationTrackerPage() {
     // Handle invalid key error
     setModalState({
       isOpen: true,
-      title: t('경고'),
+      title: t('tracker.warning'),
       description: t('tracker.invalidKey'),
       isConfirm: false,
       onConfirm: null,
-      confirmText: t('확인')
+      confirmText: t('common.ok')
     })
   }
 
@@ -286,8 +295,7 @@ export default function DonationTrackerPage() {
       setShowDropdown(true)
       setFocusedSearchIndex(-1)
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, isUnlocked])
+  }, [query, isUnlocked, searchResults, t])
 
   const handleSearchKeydown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') {
@@ -384,7 +392,7 @@ export default function DonationTrackerPage() {
 
     const displayName = name === '__anonymous__' ? t('tracker.anonymousRaw') : name
     const displayType = getDisplayType(finalType)
-    const displayAmount = amountVal.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    const displayAmount = formatAmount(amountVal)
     setToastMessage(`${displayName} • ${displayType} • ${displayAmount}`)
     setTimeout(() => setToastMessage(null), 2000)
 
@@ -392,7 +400,7 @@ export default function DonationTrackerPage() {
     document.getElementById('memberNameInput')?.focus()
   }
 
-  const showModal = (title: string, description: React.ReactNode, isConfirm = false, onConfirm: (() => void) | null = null, confirmText = t('확인')) => {
+  const showModal = (title: string, description: React.ReactNode, isConfirm = false, onConfirm: (() => void) | null = null, confirmText = t('common.ok')) => {
     setModalState({
       isOpen: true,
       title,
@@ -411,13 +419,13 @@ export default function DonationTrackerPage() {
     const displayName = record.name === '__anonymous__' ? t('tracker.anonymousRaw') : record.name
     showModal(
       t('tracker.deleteRecord'),
-      `"${displayName}"님의 ${record.amount.toFixed(2)} (${record.type}) 기록을 삭제하시겠습니까?`,
+      t('tracker.confirmDeleteRecord', { name: displayName, amount: record.amount.toFixed(2), type: getDisplayType(record.type) }),
       true,
       () => {
         setLogs(prev => prev.filter(l => l.id !== id))
         closeModal()
       },
-      t('삭제')
+      t('common.delete')
     )
   }
 
@@ -430,7 +438,7 @@ export default function DonationTrackerPage() {
         setLogs([])
         closeModal()
       },
-      t('삭제')
+      t('common.delete')
     )
   }
 
@@ -519,15 +527,17 @@ export default function DonationTrackerPage() {
   }
 
   // Compute breakdown
-  const typeSums: Record<string, number> = {}
-  let totalAmount = 0
-  
-  donationTypes.forEach(t => typeSums[t] = 0)
-  logs.forEach(log => {
-    totalAmount += log.amount
-    if (typeSums[log.type] === undefined) typeSums[log.type] = 0
-    typeSums[log.type] += log.amount
-  })
+  const { typeSums, totalAmount } = useMemo(() => {
+    const sums: Record<string, number> = {}
+    let total = 0
+    donationTypes.forEach(dtype => { sums[dtype] = 0 })
+    logs.forEach(log => {
+      total += log.amount
+      if (sums[log.type] === undefined) sums[log.type] = 0
+      sums[log.type] += log.amount
+    })
+    return { typeSums: sums, totalAmount: total }
+  }, [logs, donationTypes])
 
   return (
     <main className="flex-grow max-w-6xl w-full mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8 scalable-content">
@@ -569,6 +579,10 @@ export default function DonationTrackerPage() {
                 <input 
                   type="text" 
                   id="memberNameInput"
+                  role="combobox"
+                  aria-expanded={showDropdown}
+                  aria-controls="name-dropdown"
+                  aria-autocomplete="list"
                   tabIndex={1}
                   value={nameInput === '__anonymous__' ? t('tracker.anonymousRaw') : nameInput}
                   onChange={(e) => {
@@ -588,10 +602,12 @@ export default function DonationTrackerPage() {
               
               {/* Dropdown */}
               {showDropdown && searchResults.length > 0 && (
-                <div className="absolute left-0 right-0 mt-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl max-h-64 overflow-y-auto z-50 divide-y divide-slate-100">
+                <ul id="name-dropdown" role="listbox" className="absolute left-0 right-0 mt-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl max-h-64 overflow-y-auto z-50 divide-y divide-slate-100">
                   {searchResults.map((result, idx) => (
-                    <div
+                    <li
                       key={result.name}
+                      role="option"
+                      aria-selected={focusedSearchIndex === idx}
                       onMouseDown={(e) => {
                         e.preventDefault()
                         skipDropdownOpenRef.current = true
@@ -607,12 +623,12 @@ export default function DonationTrackerPage() {
                       <span>{result.matches}</span>
                       {result.type === 'history' && (
                         <span className="text-xs text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-700/50 px-2 py-1 rounded-full">
-                          최근
+                          {t('tracker.recent')}
                         </span>
                       )}
-                    </div>
+                    </li>
                   ))}
-                </div>
+                </ul>
               )}
             </div>
 
@@ -662,7 +678,7 @@ export default function DonationTrackerPage() {
                   className="w-full mt-2 bg-emerald-500 hover:bg-emerald-600 active:scale-[0.98] text-white font-extrabold text-lg py-3 rounded-xl shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2 md:hidden"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"/></svg>
-                  <span>바로 저장</span>
+                  <span>{t('tracker.quickSave')}</span>
                 </button>
               )}
             </div>
@@ -770,7 +786,7 @@ export default function DonationTrackerPage() {
 
           <span className="text-emerald-100 font-extrabold tracking-wider text-xs uppercase block">{t('tracker.totalAmount')}</span>
           <div className="text-4xl md:text-5xl font-black mt-1 flex items-baseline gap-2">
-            <span>{totalAmount.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            <span>{formatAmount(totalAmount)}</span>
           </div>
           
           <div className="flex justify-between items-center mt-6 pt-5 border-t border-emerald-500/50 text-sm">
@@ -798,7 +814,7 @@ export default function DonationTrackerPage() {
                     <span className="truncate">{getDisplayType(type)}</span>
                   </span>
                   <span className="text-slate-900 dark:text-slate-100 font-black text-xl flex items-center justify-end">
-                    <span>{subTotal.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    <span>{formatAmount(subTotal)}</span>
                     <span className="text-xs text-slate-400 font-normal ml-2 min-w-[3.5rem] md:min-w-[4rem] text-right">{percentage}%</span>
                   </span>
                 </div>
@@ -850,7 +866,7 @@ export default function DonationTrackerPage() {
                       </td>
                       <td className="py-3 px-2 text-right font-black text-slate-900 dark:text-slate-100 text-sm sm:text-lg">
                         <span className="font-medium">
-                          {log.amount.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          {formatAmount(log.amount)}
                         </span>
                       </td>
                       <td className="py-3 px-1 text-center">

@@ -432,8 +432,8 @@ export default function CashCounterPage() {
     
     // Generate TSV for all denominations
     const allDenominations = getDenominations(config.currency)
-    const tsvHeader = [t('화폐'), ...allDenominations.map(d => d.label)].join('\t')
-    const tsvCounts = [t('계수'), ...allDenominations.map(d => {
+    const tsvHeader = [t('cashCounter.denomination'), ...allDenominations.map(d => d.label)].join('\t')
+    const tsvCounts = [t('cashCounter.counts'), ...allDenominations.map(d => {
       const nc = state.namedCounts[d.value] || 0
       const ac = state.anonymous[d.value] || 0
       return nc + ac
@@ -521,17 +521,23 @@ export default function CashCounterPage() {
   }, [state, config, t, i18n.language])
 
   // Calculations
-  const anonymousTotal = calculateDenominationTotal(state.anonymous, config.currency)
-  const anonymousBreakdown = calculateDenominationBreakdown(state.anonymous, config.currency)
-
-  const namedTotal = calculateDenominationTotal(state.namedCounts, config.currency)
-  const namedBreakdown = calculateDenominationBreakdown(state.namedCounts, config.currency)
-
-  const grandTotal = anonymousTotal + namedTotal
-  const grandBreakdown = {
-    bills: anonymousBreakdown.bills + namedBreakdown.bills,
-    coins: anonymousBreakdown.coins + namedBreakdown.coins,
-  }
+  const { anonymousTotal, namedTotal, grandTotal, grandBreakdown } = useMemo(() => {
+    const aTotal = calculateDenominationTotal(state.anonymous, config.currency)
+    const aBreakdown = calculateDenominationBreakdown(state.anonymous, config.currency)
+    const nTotal = calculateDenominationTotal(state.namedCounts, config.currency)
+    const nBreakdown = calculateDenominationBreakdown(state.namedCounts, config.currency)
+    const gTotal = aTotal + nTotal
+    const gBreakdown = {
+      bills: aBreakdown.bills + nBreakdown.bills,
+      coins: aBreakdown.coins + nBreakdown.coins,
+    }
+    return {
+      anonymousTotal: aTotal,
+      namedTotal: nTotal,
+      grandTotal: gTotal,
+      grandBreakdown: gBreakdown,
+    }
+  }, [state.anonymous, state.namedCounts, config.currency])
 
   const getMatchStatus = (): 'match' | 'excess' | 'shortage' | 'none' => {
     if (config.targetAmount === 0) return 'none'
@@ -581,7 +587,7 @@ export default function CashCounterPage() {
             <button
               onClick={handleGearClick}
               className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-              title="Settings"
+              aria-label={t('common.settings')}
             >
               <span className="text-2xl">⚙️</span>
             </button>

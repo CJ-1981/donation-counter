@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next'
+import { getCurrencySymbol } from '../config/currencyDenominations'
 import { useFontSize } from '../contexts/FontSizeContext'
 
 export interface SettingsPanelProps {
@@ -7,16 +9,17 @@ export interface SettingsPanelProps {
 }
 
 export function SettingsPanel({ currency, targetAmount, onTargetAmountChange }: SettingsPanelProps) {
+  const { t } = useTranslation()
   const { fontSize, setFontSize } = useFontSize()
 
   return (
     <div className="border-t border-slate-200 dark:border-slate-700 px-4 py-4 bg-slate-50 dark:bg-slate-900/50">
       <div className="max-w-4xl mx-auto">
         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-          Target Amount (optional, for comparison)
+          {t('cashCounter.targetAmountLabel')}
         </label>
         <div className="flex gap-2 items-center">
-          <span className="text-slate-500 dark:text-slate-400">{currency}</span>
+          <span className="text-slate-500 dark:text-slate-400">{getCurrencySymbol(currency)}</span>
           <input
             id="target-amount"
             name="target-amount"
@@ -39,7 +42,7 @@ export function SettingsPanel({ currency, targetAmount, onTargetAmountChange }: 
         {/* Font Size Selector */}
         <div className="mt-4">
           <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-            Font Size
+            {t('common.fontSize')}
           </label>
           <div className="grid grid-cols-3 gap-2">
             {(['normal', 'large', 'extraLarge'] as const).map((size) => (
@@ -51,9 +54,9 @@ export function SettingsPanel({ currency, targetAmount, onTargetAmountChange }: 
                     : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600'
                   }`}
               >
-                {size === 'normal' && 'Normal'}
-                {size === 'large' && 'Large'}
-                {size === 'extraLarge' && 'XL'}
+                {size === 'normal' && t('common.fontSizeNormal')}
+                {size === 'large' && t('common.fontSizeLarge')}
+                {size === 'extraLarge' && t('common.fontSizeExtraLarge')}
               </button>
             ))}
           </div>

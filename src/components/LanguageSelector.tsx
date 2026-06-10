@@ -18,6 +18,10 @@ export function LanguageSelector() {
     triggerRef.current?.focus()
   }
 
+  useEffect(() => {
+    document.documentElement.lang = (i18n.language || 'en').split('-')[0]
+  }, [i18n.language])
+
   const getCurrentLanguageCode = () => {
     const lang = i18n.language || 'en'
     return lang.split('-')[0]

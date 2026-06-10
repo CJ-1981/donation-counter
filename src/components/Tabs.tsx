@@ -5,8 +5,13 @@ interface TabsProps {
 
 export function Tabs({ activeTab, onTabChange }: TabsProps) {
   return (
-    <div className="flex bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm shrink-0 z-50">
+    <div className="flex bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm shrink-0 z-50" role="tablist">
       <button
+        id="tab-cash-counter"
+        role="tab"
+        aria-selected={activeTab === 'cash-counter'}
+        aria-controls="panel-cash-counter"
+        tabIndex={activeTab === 'cash-counter' ? 0 : -1}
         onClick={() => onTabChange('cash-counter')}
         className={`flex-1 py-4 text-center transition-colors ${
           activeTab === 'cash-counter'
@@ -17,6 +22,11 @@ export function Tabs({ activeTab, onTabChange }: TabsProps) {
         Cash Counter
       </button>
       <button
+        id="tab-donation-tracker"
+        role="tab"
+        aria-selected={activeTab === 'donation-tracker'}
+        aria-controls="panel-donation-tracker"
+        tabIndex={activeTab === 'donation-tracker' ? 0 : -1}
         onClick={() => onTabChange('donation-tracker')}
         className={`flex-1 py-4 text-center transition-colors ${
           activeTab === 'donation-tracker'

@@ -2,7 +2,6 @@ import { useState, useRef, useCallback } from 'react'
 import CashCounterPage from './pages/CashCounterPage'
 import DonationTrackerPage from './pages/DonationTrackerPage'
 import { Tabs } from './components/Tabs'
-import packageJson from '../package.json'
 
 const SWIPE_THRESHOLD = 50
 
@@ -97,7 +96,7 @@ function App() {
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 15l7-7 7 7"/></svg>
         </button>
         <span className="text-xs font-medium text-slate-400 dark:text-slate-500">
-          v{packageJson.version} • 2026-06-07
+          v{__APP_VERSION__} • {__BUILD_DATE__}
         </span>
         <button
           type="button"
