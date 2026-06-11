@@ -78,10 +78,10 @@ function App() {
       <Tabs activeTab={activeTab} onTabChange={setActiveTab} />
       
       {/* Tab Content Containers */}
-      <div ref={cashScrollRef} className={`flex-1 overflow-y-auto w-full relative ${activeTab === 'cash-counter' ? 'block' : 'hidden'}`}>
+      <div ref={cashScrollRef} id="panel-cash-counter" role="tabpanel" aria-labelledby="tab-cash-counter" className={`flex-1 overflow-y-auto w-full relative ${activeTab === 'cash-counter' ? 'block' : 'hidden'}`}>
         <CashCounterPage />
       </div>
-      <div ref={donationScrollRef} className={`flex-1 overflow-y-auto w-full ${activeTab === 'donation-tracker' ? 'block' : 'hidden'}`}>
+      <div ref={donationScrollRef} id="panel-donation-tracker" role="tabpanel" aria-labelledby="tab-donation-tracker" className={`flex-1 overflow-y-auto w-full ${activeTab === 'donation-tracker' ? 'block' : 'hidden'}`}>
         <DonationTrackerPage />
       </div>
       

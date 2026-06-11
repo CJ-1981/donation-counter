@@ -144,7 +144,13 @@ export default function DonationTrackerPage() {
           if (Array.isArray(parsed) && parsed.length > 0 && parsed.every(item => typeof item === 'string')) {
             setMembers(parsed)
             setIsUnlocked(true)
+          } else {
+            // Decrypted data is invalid — clear the bad key
+            localStorage.removeItem('church_member_key')
           }
+        } else {
+          // Decryption returned empty — key is wrong, clear it
+          localStorage.removeItem('church_member_key')
         }
       }
     } catch {
@@ -419,7 +425,7 @@ export default function DonationTrackerPage() {
     const displayName = record.name === '__anonymous__' ? t('tracker.anonymousRaw') : record.name
     showModal(
       t('tracker.deleteRecord'),
-      t('tracker.confirmDeleteRecord', { name: displayName, amount: record.amount.toFixed(2), type: getDisplayType(record.type) }),
+      t('tracker.confirmDeleteRecord', { name: displayName, amount: formatAmount(record.amount), type: getDisplayType(record.type) }),
       true,
       () => {
         setLogs(prev => prev.filter(l => l.id !== id))
@@ -583,6 +589,7 @@ export default function DonationTrackerPage() {
                   aria-expanded={showDropdown}
                   aria-controls="name-dropdown"
                   aria-autocomplete="list"
+                  aria-activedescendant={showDropdown && focusedSearchIndex >= 0 && focusedSearchIndex < searchResults.length ? `option-${focusedSearchIndex}` : undefined}
                   tabIndex={1}
                   value={nameInput === '__anonymous__' ? t('tracker.anonymousRaw') : nameInput}
                   onChange={(e) => {
@@ -606,6 +613,7 @@ export default function DonationTrackerPage() {
                   {searchResults.map((result, idx) => (
                     <li
                       key={result.name}
+                      id={`option-${idx}`}
                       role="option"
                       aria-selected={focusedSearchIndex === idx}
                       onMouseDown={(e) => {
