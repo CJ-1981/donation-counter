@@ -128,7 +128,6 @@ export const CURRENCY_DENOMINATIONS: Record<string, CurrencyDenominations> = {
       { value: 20, label: '20', type: 'bill' },
       { value: 10, label: '10', type: 'bill' },
       { value: 5, label: '5', type: 'bill' },
-      { value: 1, label: '1', type: 'bill' },
       { value: 1, label: '1', type: 'coin' },
       { value: 0.50, label: '0.50', type: 'coin' },
       { value: 0.10, label: '0.10', type: 'coin' },

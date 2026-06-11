@@ -2,7 +2,7 @@
   "name": "Donation Counter",
   "short_name": "Donate",
   "description": "Church donation tracker and cash counter",
-  "start_url": "/donation-counter/",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#f8fafc",
   "theme_color": "#863bff",
