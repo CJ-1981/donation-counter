@@ -60,7 +60,8 @@ export default function DonationTrackerPage() {
     })
   }, [donationTypes])
 
-  const [customType, setCustomType] = useState('')
+
+
   const [currencyConfig, setCurrencyConfig] = useState(() => {
     try {
       const stored = localStorage.getItem('cashcounter_config')
@@ -109,6 +110,20 @@ export default function DonationTrackerPage() {
 
   const [nameInput, setNameInput] = useState('')
   const [amountInput, setAmountInput] = useState('')
+  const [customType, setCustomType] = useState('')
+
+  const finalType = customType.trim() || selectedType
+  const currentDisplayType = getDisplayType(finalType)
+
+  useEffect(() => {
+    const anonSuffix = `-${t('tracker.anonymousRaw')}`
+    setNameInput(prev => {
+      if (prev.endsWith(anonSuffix) || prev === '__anonymous__') {
+        return `${currentDisplayType}${anonSuffix}`
+      }
+      return prev
+    })
+  }, [currentDisplayType, t, nameInput])
   const [nameHistory, setNameHistory] = useState<string[]>(() => {
     try {
       const stored = localStorage.getItem('church_name_history')
@@ -355,9 +370,9 @@ export default function DonationTrackerPage() {
 
   const handleFormSubmit = (e?: React.FormEvent, customTypeOverride?: string) => {
     if (e) e.preventDefault()
-    const name = nameInput.trim()
+    let name = nameInput.trim()
     const amountVal = parseFloat(amountInput)
-    const finalType = customTypeOverride || customType.trim() || selectedType
+    const finalSubmitType = customTypeOverride || finalType
 
     if (!name) {
       showModal(t('tracker.notification'), t('tracker.enterName'))
@@ -372,16 +387,24 @@ export default function DonationTrackerPage() {
       return
     }
 
+    const anonSuffix = `-${t('tracker.anonymousRaw')}`;
+    const isAnonymousEntry = name === '__anonymous__' || name.endsWith(anonSuffix);
+    
+    let logName = name;
+    if (!isAnonymousEntry && name && !members.includes(name)) {
+      logName = `${name}${t('tracker.newMemberSuffix', ' (New Member)')}`;
+    }
+
     const newLog: LogEntry = {
       id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15),
-      name: name,
+      name: logName,
       amount: amountVal,
-      type: finalType
+      type: finalSubmitType
     }
 
     setLogs(prev => [...prev, newLog])
     
-    if (name !== '__anonymous__') {
+    if (!isAnonymousEntry) {
       const updatedHistory = [name, ...nameHistory.filter(n => n !== name)].slice(0, 10)
       setNameHistory(updatedHistory)
       localStorage.setItem('church_name_history', JSON.stringify(updatedHistory))
@@ -396,8 +419,8 @@ export default function DonationTrackerPage() {
     setAmountInput('')
     setShowDropdown(false)
 
-    const displayName = name === '__anonymous__' ? t('tracker.anonymousRaw') : name
-    const displayType = getDisplayType(finalType)
+    const displayName = logName === '__anonymous__' ? t('tracker.anonymousRaw') : logName
+    const displayType = getDisplayType(finalSubmitType)
     const displayAmount = formatAmount(amountVal)
     setToastMessage(`${displayName} • ${displayType} • ${displayAmount}`)
     setTimeout(() => setToastMessage(null), 2000)
@@ -457,11 +480,12 @@ export default function DonationTrackerPage() {
 
   const exportToCSV = () => {
     if (logs.length === 0) return
-    const csvRows = [[t('tracker.name'), t('tracker.amount'), t('tracker.type')]]
+    const csvRows = [[t('tracker.name'), t('tracker.currency', 'Currency'), t('tracker.amount'), t('tracker.type')]]
     logs.forEach(log => {
       const displayName = log.name === '__anonymous__' ? t('tracker.anonymousRaw') : log.name
       csvRows.push([
         escapeSpreadsheetCell(displayName), 
+        currencyConfig.code || 'EUR',
         log.amount.toFixed(2), 
         escapeSpreadsheetCell(getDisplayType(log.type))
       ])
@@ -489,11 +513,12 @@ export default function DonationTrackerPage() {
 
   const copyToClipboard = () => {
     if (logs.length === 0) return
-    const headers = [t('tracker.name'), t('tracker.amount'), t('tracker.type')].join("\t")
+    const headers = [t('tracker.name'), t('tracker.currency', 'Currency'), t('tracker.amount'), t('tracker.type')].join("\t")
     const rows = logs.map(log => {
       const displayName = log.name === '__anonymous__' ? t('tracker.anonymousRaw') : log.name
       return [
         escapeSpreadsheetCell(displayName), 
+        currencyConfig.code || 'EUR',
         log.amount.toFixed(2), 
         escapeSpreadsheetCell(getDisplayType(log.type))
       ].join("\t")
@@ -849,6 +874,7 @@ export default function DonationTrackerPage() {
               <thead>
                 <tr className="text-slate-400 font-bold text-sm border-b border-slate-100 dark:border-slate-700">
                   <th className="pb-2 px-2 w-1/3">{t('tracker.name')}</th>
+                  <th className="pb-2 px-2">{t('tracker.currency', 'Currency')}</th>
                   <th className="pb-2 px-2 w-1/4">{t('tracker.type')}</th>
                   <th className="pb-2 px-2 text-right">{t('tracker.amount')}</th>
                   <th className="pb-2 text-center w-10"></th>
@@ -857,7 +883,7 @@ export default function DonationTrackerPage() {
               <tbody className="divide-y divide-slate-100 text-sm sm:text-base font-semibold">
                 {logs.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="py-12 text-center text-slate-400 font-medium">
+                    <td colSpan={5} className="py-12 text-center text-slate-400 font-medium">
                       {t('tracker.noRecords')}
                     </td>
                   </tr>
@@ -866,6 +892,9 @@ export default function DonationTrackerPage() {
                     <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/50 transition border-b border-slate-100 dark:border-slate-700 group">
                       <td className="py-3 px-2 font-medium text-slate-900 dark:text-slate-100 text-sm sm:text-lg">
                         <div className="truncate max-w-[120px] sm:max-w-none">{log.name === '__anonymous__' ? t('tracker.anonymousRaw') : log.name}</div>
+                      </td>
+                      <td className="py-3 px-2 text-slate-500 dark:text-slate-400 font-semibold text-xs sm:text-sm">
+                        {currencyConfig.code || 'EUR'}
                       </td>
                       <td className="py-3 px-2 text-slate-600 dark:text-slate-400 font-semibold text-sm">
                         <span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs sm:text-sm font-bold border border-slate-200 dark:border-slate-700 inline-block max-w-[110px] truncate" title={getDisplayType(log.type)}>

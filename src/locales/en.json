@@ -106,6 +106,8 @@
     "recent": "Recent",
     "quickSave": "Quick Save",
     "tabCashCounter": "Cash Counter",
-    "tabDonationTracker": "Donation Tracker"
+    "tabDonationTracker": "Donation Tracker",
+    "currency": "Currency",
+    "newMemberSuffix": " (New Member)"
   }
 }
