@@ -60,19 +60,7 @@ export default function DonationTrackerPage() {
     })
   }, [donationTypes])
 
-  const [customType, setCustomType] = useState('')
-  const finalType = customType.trim() || selectedType
-  const currentDisplayType = getDisplayType(finalType)
 
-  useEffect(() => {
-    const anonSuffix = `-${t('tracker.anonymousRaw')}`
-    setNameInput(prev => {
-      if (prev.endsWith(anonSuffix) || prev === '__anonymous__') {
-        return `${currentDisplayType}${anonSuffix}`
-      }
-      return prev
-    })
-  }, [currentDisplayType, t, nameInput])
 
   const [currencyConfig, setCurrencyConfig] = useState(() => {
     try {
@@ -122,6 +110,20 @@ export default function DonationTrackerPage() {
 
   const [nameInput, setNameInput] = useState('')
   const [amountInput, setAmountInput] = useState('')
+  const [customType, setCustomType] = useState('')
+
+  const finalType = customType.trim() || selectedType
+  const currentDisplayType = getDisplayType(finalType)
+
+  useEffect(() => {
+    const anonSuffix = `-${t('tracker.anonymousRaw')}`
+    setNameInput(prev => {
+      if (prev.endsWith(anonSuffix) || prev === '__anonymous__') {
+        return `${currentDisplayType}${anonSuffix}`
+      }
+      return prev
+    })
+  }, [currentDisplayType, t, nameInput])
   const [nameHistory, setNameHistory] = useState<string[]>(() => {
     try {
       const stored = localStorage.getItem('church_name_history')
