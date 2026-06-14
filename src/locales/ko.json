@@ -106,6 +106,8 @@
     "recent": "최근",
     "quickSave": "바로 저장",
     "tabCashCounter": "현금 계산기",
-    "tabDonationTracker": "헌금 계수기"
+    "tabDonationTracker": "헌금 계수기",
+    "currency": "화폐",
+    "newMemberSuffix": " (신규성도)"
   }
 }
