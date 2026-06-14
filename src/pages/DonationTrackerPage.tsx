@@ -297,7 +297,7 @@ export default function DonationTrackerPage() {
         return null
       })
       .filter((x): x is {name: string, matches: React.ReactNode, type: string} => x !== null)
-      .slice(0, 5)
+      .slice(0, 50)
   }, [query, isUnlocked, members, nameHistory, t])
 
   // @MX:NOTE: Synchronize derived UI state (dropdown visibility) based on query and results.
