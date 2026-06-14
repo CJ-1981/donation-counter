@@ -318,6 +318,15 @@ export default function DonationTrackerPage() {
     }
   }, [query, isUnlocked, searchResults, t])
 
+  useEffect(() => {
+    if (showDropdown && focusedSearchIndex >= 0) {
+      const el = document.getElementById(`option-${focusedSearchIndex}`)
+      if (el) {
+        el.scrollIntoView({ block: 'nearest' })
+      }
+    }
+  }, [showDropdown, focusedSearchIndex])
+
   const handleSearchKeydown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') {
       if (!showDropdown) {
