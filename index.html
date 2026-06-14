@@ -4100,6 +4100,7 @@ This invitation expires in 7 days.`, fullInvitationCopied: "Full invitation copi
                 "Donation Tracker": "Donation Tracker",
                 "헌금 입력": "Donation Entry",
                 "무명": "Anonymous",
+                "기명": "Named",
                 "👤 무명": "👤 Anonymous",
                 "성명": "Name",
                 "헌금 종류": "Donation Type",
@@ -4201,14 +4202,14 @@ This invitation expires in 7 days.`, fullInvitationCopied: "Full invitation copi
         }
 
         // Default Customizable Donation types - 주일학교 추가
-        const DEFAULT_TYPES_KO = ["주일", "십일조", "감사", "선교/구제", "특별헌금", "주일학교"];
+        const DEFAULT_TYPES_KO = ["주일헌금", "십일조", "감사헌금", "선교/구제", "특별헌금", "주일학교"];
         const DEFAULT_TYPES = DEFAULT_TYPES_KO.map(x => t(x));
 
         // Application State
         let state = {
             members: [],
             donationTypes: [...DEFAULT_TYPES],
-            selectedType: t("주일"), // default initial selection
+            selectedType: t("주일헌금"), // default initial selection
             logs: [],
             focusedSearchIndex: -1,
             nameHistory: [],
@@ -4288,7 +4289,9 @@ This invitation expires in 7 days.`, fullInvitationCopied: "Full invitation copi
 
         // QUICK "무명" BUTTON EVENT
         function setAnonymous() {
-            memberInput.value = t("무명");
+            const currentType = customTypeInput ? customTypeInput.value.trim() : state.selectedType;
+            const prefix = currentType ? currentType + "-" : "";
+            memberInput.value = prefix + t("무명");
             hideSearchDropdown();
             amountInput.focus();
         }
@@ -4509,11 +4512,7 @@ This invitation expires in 7 days.`, fullInvitationCopied: "Full invitation copi
         // REGISTER & AUTOMATICALLY SELECT MEMBER
         function addAndSelectMember(name) {
             const cleanName = name.trim();
-            if (cleanName && !state.members.includes(cleanName)) {
-                state.members.push(cleanName);
-                state.members.sort();
-                saveMembersStateToStorage();
-            }
+            // Delay adding to state.members until handleFormSubmit so (신규성도) logic can trigger.
             selectMember(cleanName);
         }
 
@@ -4662,6 +4661,13 @@ This invitation expires in 7 days.`, fullInvitationCopied: "Full invitation copi
                 customTypeInput.value = type;
             }
             renderDonationTypeSelection();
+
+            const currentName = memberInput.value.trim();
+            if (currentName.endsWith("-" + t("무명")) || currentName === t("무명")) {
+                const prefix = type ? type + "-" : "";
+                memberInput.value = prefix + t("무명");
+            }
+
             // Refocus the active type button after DOM rebuild to prevent focus loss
             if (focusAfterRender) {
                 const buttons = typeSelectorGrid.querySelectorAll('button');
@@ -4694,6 +4700,13 @@ This invitation expires in 7 days.`, fullInvitationCopied: "Full invitation copi
             state.selectedType = val.trim();
             // Live update selection states of grid buttons
             renderDonationTypeSelection();
+
+            const currentName = memberInput.value.trim();
+            if (currentName.endsWith("-" + t("무명")) || currentName === t("무명")) {
+                const newType = val.trim();
+                const prefix = newType ? newType + "-" : "";
+                memberInput.value = prefix + t("무명");
+            }
         }
 
         // TOAST NOTIFICATION FUNCTION
@@ -4745,10 +4758,20 @@ This invitation expires in 7 days.`, fullInvitationCopied: "Full invitation copi
                 return;
             }
 
+            const isAnonymousName = name.endsWith("-" + t("무명")) || name === t("무명");
+            let finalName = name;
+
+            // If the name is brand new, append to temporary local member lists (excluding default "무명")
+            if (!isAnonymousName && !state.members.includes(name)) {
+                finalName = name + " (신규성도)";
+                state.members.push(name);
+                saveMembersStateToStorage();
+            }
+
             // Create Entry object (date 필드 제거)
             const record = {
                 id: crypto.randomUUID(),
-                name: name,
+                name: finalName,
                 amount: amountVal,
                 type: finalType
             };
@@ -4757,14 +4780,8 @@ This invitation expires in 7 days.`, fullInvitationCopied: "Full invitation copi
             state.logs.push(record);
 
             // Add to name history (excluding "무명")
-            if (name !== t("무명")) {
+            if (!isAnonymousName) {
                 addToNameHistory(name);
-            }
-
-            // If the name is brand new, append to temporary local member lists (excluding default "무명")
-            if (name !== t("무명") && !state.members.includes(name)) {
-                state.members.push(name);
-                saveMembersStateToStorage();
             }
 
             // Refresh UI components
@@ -5120,6 +5137,58 @@ This invitation expires in 7 days.`, fullInvitationCopied: "Full invitation copi
     </script>
 
     <script>
+        function getCashCounterTotal() {
+            try {
+                const data = JSON.parse(localStorage.getItem("cashcounter_standalone"));
+                if (!data) return null;
+                let namedSum = 0;
+                let anonSum = 0;
+                if (data.anonymous) {
+                    for (const denom in data.anonymous) {
+                        anonSum += parseFloat(denom) * data.anonymous[denom];
+                    }
+                }
+                if (data.namedCounts) {
+                    for (const denom in data.namedCounts) {
+                        namedSum += parseFloat(denom) * data.namedCounts[denom];
+                    }
+                }
+                return { total: namedSum + anonSum, named: namedSum, anonymous: anonSum };
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function updateTabTotals() {
+            const tabCash = document.getElementById('tab-cash-counter');
+            const tabTracker = document.getElementById('tab-donation-tracker');
+            const currency = window.CURRENT_CURRENCY || '€';
+            
+            if (tabTracker) {
+                let trackerSum = 0;
+                if (typeof state !== 'undefined' && state.logs) {
+                    trackerSum = state.logs.reduce((acc, curr) => acc + curr.amount, 0);
+                }
+                if (trackerSum > 0) {
+                    tabTracker.innerHTML = `${t("Donation Tracker")}<br><span class="text-xs font-normal opacity-90 leading-tight block mt-0.5">Total: ${currency} ${trackerSum.toLocaleString()}</span>`;
+                } else {
+                    tabTracker.innerText = t("Donation Tracker");
+                }
+            }
+            
+            if (tabCash) {
+                const cashData = getCashCounterTotal();
+                if (cashData !== null && cashData.total > 0) {
+                    tabCash.innerHTML = `${t("Cash Counter")}<br><span class="text-xs font-normal opacity-90 leading-tight block mt-0.5 text-[10px] sm:text-xs">Total: ${currency} ${cashData.total.toLocaleString()}<br><span class="opacity-75 tracking-tight">${t("기명")}: ${currency} ${cashData.named.toLocaleString()} | ${t("무명")}: ${currency} ${cashData.anonymous.toLocaleString()}</span></span>`;
+                } else {
+                    tabCash.innerText = t("Cash Counter");
+                }
+            }
+        }
+
+        // Run tab totals updater periodically
+        setInterval(updateTabTotals, 1000);
+
         function applyTranslations() {
             document.querySelectorAll('[data-i18n]').forEach(el => {
                 const key = el.getAttribute('data-i18n');
@@ -5131,10 +5200,7 @@ This invitation expires in 7 days.`, fullInvitationCopied: "Full invitation copi
             });
 
             // Refresh tabs
-            const tabCash = document.getElementById('tab-cash-counter');
-            const tabTracker = document.getElementById('tab-donation-tracker');
-            if (tabCash) tabCash.innerText = t("Cash Counter");
-            if (tabTracker) tabTracker.innerText = t("Donation Tracker");
+            updateTabTotals();
 
             // Re-render tracker dynamic elements if the functions exist
             if (typeof renderDonationTypeSelection === 'function') {
