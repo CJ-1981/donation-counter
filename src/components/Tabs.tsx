@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
+import { getCurrencySymbol } from '../config/currencyDenominations'
 
 interface TabsProps {
   activeTab: 'cash-counter' | 'donation-tracker'
@@ -6,6 +8,7 @@ interface TabsProps {
 }
 
 export function Tabs({ activeTab, onTabChange }: TabsProps) {
+  const { t } = useTranslation()
   const [cashTotal, setCashTotal] = useState<{ total: number, named: number, anonymous: number } | null>(null)
   const [trackerTotal, setTrackerTotal] = useState<number | null>(null)
   const [currencySymbol, setCurrencySymbol] = useState('€')
@@ -19,8 +22,7 @@ export function Tabs({ activeTab, onTabChange }: TabsProps) {
           const config = JSON.parse(configStr)
           if (config.currency) cur = config.currency
         }
-        const map: Record<string, string> = { 'EUR': '€', 'USD': '$', 'GBP': '£', 'KRW': '₩', 'JPY': '¥' }
-        setCurrencySymbol(map[cur] || cur)
+        setCurrencySymbol(getCurrencySymbol(cur))
 
         const cashStr = localStorage.getItem('cashcounter_standalone')
         if (cashStr) {
@@ -76,11 +78,11 @@ export function Tabs({ activeTab, onTabChange }: TabsProps) {
             : 'text-slate-500 dark:text-slate-400 border-b-4 border-transparent hover:text-violet-600 dark:hover:text-violet-300 hover:bg-slate-50 dark:hover:bg-slate-800'
         }`}
       >
-        <div className="font-bold">Cash Counter</div>
+        <div className="font-bold">{t('tracker.tabCashCounter')}</div>
         {cashTotal && cashTotal.total > 0 && (
           <div className="text-[10px] sm:text-xs opacity-90 leading-tight block mt-0.5 font-normal">
-            Total: {currencySymbol} {cashTotal.total.toLocaleString()}<br/>
-            <span className="opacity-75 tracking-tight">기명: {currencySymbol} {cashTotal.named.toLocaleString()} | 무명: {currencySymbol} {cashTotal.anonymous.toLocaleString()}</span>
+            {t('cashCounter.totalCounted')}: {currencySymbol} {cashTotal.total.toLocaleString()}<br/>
+            <span className="opacity-75 tracking-tight">{t('cashCounter.named')}: {currencySymbol} {cashTotal.named.toLocaleString()} | {t('cashCounter.anonymous')}: {currencySymbol} {cashTotal.anonymous.toLocaleString()}</span>
           </div>
         )}
       </button>
@@ -97,10 +99,10 @@ export function Tabs({ activeTab, onTabChange }: TabsProps) {
             : 'text-slate-500 dark:text-slate-400 border-b-4 border-transparent hover:text-violet-600 dark:hover:text-violet-300 hover:bg-slate-50 dark:hover:bg-slate-800'
         }`}
       >
-        <div className="font-bold">Donation Tracker</div>
+        <div className="font-bold">{t('tracker.tabDonationTracker')}</div>
         {trackerTotal !== null && trackerTotal > 0 && (
           <div className="text-[10px] sm:text-xs opacity-90 leading-tight block mt-0.5 font-normal">
-            Total: {currencySymbol} {trackerTotal.toLocaleString()}
+            {t('cashCounter.totalCounted')}: {currencySymbol} {trackerTotal.toLocaleString()}
           </div>
         )}
       </button>

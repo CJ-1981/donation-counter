@@ -72,7 +72,7 @@ export default function DonationTrackerPage() {
       }
       return prev
     })
-  }, [currentDisplayType, t])
+  }, [currentDisplayType, t, nameInput])
 
   const [currencyConfig, setCurrencyConfig] = useState(() => {
     try {
@@ -390,7 +390,7 @@ export default function DonationTrackerPage() {
     
     let logName = name;
     if (!isAnonymousEntry && name && !members.includes(name)) {
-      logName = `${name} (신규성도)`;
+      logName = `${name}${t('tracker.newMemberSuffix', ' (New Member)')}`;
     }
 
     const newLog: LogEntry = {
