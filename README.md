@@ -84,10 +84,10 @@ You can easily append new member names directly from the GitHub Mobile app (or b
 2. **Run the Workflow on Mobile**:
    - Open GitHub Mobile app or browser -> go to **Actions** tab -> select **Add New Members to Secret**.
    - Tap **Run workflow**.
-   - Enter member name(s) in the **names** field (e.g., `John Doe, Jane Smith`).
+   - Enter member name(s) in the **names** field (e.g., `John Doe, Jane Smith` or `"Smith, John & Jane", Alice`).
    - Run the workflow.
 3. The workflow automatically:
-   - Trims whitespace and removes duplicate names.
+   - Trims whitespace and removes duplicate names (names containing commas can be enclosed in double quotes).
    - Appends new names to the `MEMBERS` secret.
    - Triggers automatic build & deployment to GitHub Pages.
 
