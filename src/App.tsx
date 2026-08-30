@@ -10,7 +10,7 @@ function App() {
   const touchStartX = useRef<number | null>(null)
   const touchStartY = useRef<number | null>(null)
   const isSwiping = useRef(false)
-  const touchStartHasScrollLeft = useRef(false)
+  const touchStartInsideScrollable = useRef(false)
   const cashScrollRef = useRef<HTMLDivElement>(null)
   const donationScrollRef = useRef<HTMLDivElement>(null)
 
@@ -20,15 +20,19 @@ function App() {
     isSwiping.current = false
 
     let el = e.target as HTMLElement | null
-    let hasScrollLeft = false
+    let isInsideHorizontallyScrollable = false
     while (el && el !== e.currentTarget) {
-      if (el.scrollLeft > 0) {
-        hasScrollLeft = true
+      const overflowX = window.getComputedStyle(el).overflowX
+      const isScrollableStyle = overflowX === 'auto' || overflowX === 'scroll' || overflowX === 'overlay'
+      const canScrollHorizontally = el.scrollWidth > el.clientWidth + 1
+
+      if (el.scrollLeft > 0 || (isScrollableStyle && canScrollHorizontally)) {
+        isInsideHorizontallyScrollable = true
         break
       }
       el = el.parentElement
     }
-    touchStartHasScrollLeft.current = hasScrollLeft
+    touchStartInsideScrollable.current = isInsideHorizontallyScrollable
   }, [])
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
@@ -58,16 +62,22 @@ function App() {
 
     if (deltaX > 0) {
       // Swipe right → go to previous tab (Cash Counter)
+      if (touchStartInsideScrollable.current) return
+
       let el = e.target as HTMLElement | null
-      let isHorizontallyScrolled = touchStartHasScrollLeft.current
-      while (!isHorizontallyScrolled && el && el !== e.currentTarget) {
-        if (el.scrollLeft > 0) {
-          isHorizontallyScrolled = true
+      let isHorizontallyScrollable = false
+      while (el && el !== e.currentTarget) {
+        const overflowX = window.getComputedStyle(el).overflowX
+        const isScrollableStyle = overflowX === 'auto' || overflowX === 'scroll' || overflowX === 'overlay'
+        const canScrollHorizontally = el.scrollWidth > el.clientWidth + 1
+
+        if (el.scrollLeft > 0 || (isScrollableStyle && canScrollHorizontally)) {
+          isHorizontallyScrollable = true
           break
         }
         el = el.parentElement
       }
-      if (isHorizontallyScrolled) return
+      if (isHorizontallyScrollable) return
 
       setActiveTab(prev => prev === 'donation-tracker' ? 'cash-counter' : prev)
     } else {
