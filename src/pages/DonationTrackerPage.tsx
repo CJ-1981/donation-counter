@@ -95,6 +95,15 @@ export default function DonationTrackerPage() {
   
   const [logs, setLogs] = useState<LogEntry[]>(() => {
     try {
+      const storedTime = localStorage.getItem('church_donation_logs_timestamp')
+      if (storedTime) {
+        const timestamp = parseInt(storedTime, 10)
+        if (!isNaN(timestamp) && Date.now() - timestamp > 24 * 60 * 60 * 1000) {
+          localStorage.removeItem('church_donation_logs')
+          localStorage.removeItem('church_donation_logs_timestamp')
+          return []
+        }
+      }
       const stored = localStorage.getItem('church_donation_logs')
       if (stored) {
         const parsed = JSON.parse(stored)
@@ -104,8 +113,17 @@ export default function DonationTrackerPage() {
     return []
   })
 
+  const isInitialLogsRender = useRef(true)
   useEffect(() => {
     localStorage.setItem('church_donation_logs', JSON.stringify(logs))
+    if (isInitialLogsRender.current) {
+      isInitialLogsRender.current = false
+      if (!localStorage.getItem('church_donation_logs_timestamp')) {
+        localStorage.setItem('church_donation_logs_timestamp', Date.now().toString())
+      }
+    } else {
+      localStorage.setItem('church_donation_logs_timestamp', Date.now().toString())
+    }
   }, [logs])
 
   const [nameInput, setNameInput] = useState('')
