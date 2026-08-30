@@ -72,6 +72,24 @@ Set these in your repository settings (Settings → Secrets and variables → Ac
 |--------|-------------|
 | `MEMBERS` | JSON array of member names, e.g. `["김철수","이영희","박민수"]` |
 | `MEMBER_KEY` | AES encryption key (shared with app users) |
+| `PAT_TOKEN` | Fine-grained or classic Personal Access Token with repository `Secrets: Write` permissions (required to update `MEMBERS` via workflow) |
+
+### Adding New Members via Mobile (GitHub Actions Workflow)
+
+You can easily append new member names directly from the GitHub Mobile app (or browser) without modifying secret values manually:
+
+1. **Setup PAT_TOKEN**:
+   - Create a Personal Access Token with repository `Secrets: Write` and `Workflows: Write` permission.
+   - Add it as a secret named `PAT_TOKEN` in **Settings → Secrets and variables → Actions**.
+2. **Run the Workflow on Mobile**:
+   - Open GitHub Mobile app or browser -> go to **Actions** tab -> select **Add New Members to Secret**.
+   - Tap **Run workflow**.
+   - Enter member name(s) in the **names** field (e.g., `John Doe, Jane Smith`).
+   - Run the workflow.
+3. The workflow automatically:
+   - Trims whitespace and removes duplicate names.
+   - Appends new names to the `MEMBERS` secret.
+   - Triggers automatic build & deployment to GitHub Pages.
 
 ### Local Development
 ```bash
