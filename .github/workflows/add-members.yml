@@ -1,0 +1,46 @@
+name: Add New Members to Secret
+
+on:
+  workflow_dispatch:
+    inputs:
+      names:
+        description: 'Member name(s) to add (comma-separated for multiple)'
+        required: true
+        type: string
+
+jobs:
+  add-members:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Process member names
+        id: process
+        env:
+          EXISTING_MEMBERS: ${{ secrets.MEMBERS }}
+          NEW_NAMES: ${{ inputs.names }}
+        run: node add_members.cjs
+
+      - name: Update MEMBERS secret
+        env:
+          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
+          UPDATED_JSON: ${{ steps.process.outputs.updated_json }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "ERROR: PAT_TOKEN secret is not set. Please create a Personal Access Token with repository secrets write access and store it as PAT_TOKEN in secrets."
+            exit 1
+          fi
+          echo "$UPDATED_JSON" | gh secret set MEMBERS --repo "${{ github.repository }}"
+
+      - name: Trigger Build & Deploy workflow
+        env:
+          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
+        run: |
+          gh workflow run deploy.yml --repo "${{ github.repository }}"
+          echo "Successfully triggered deploy.yml workflow."
