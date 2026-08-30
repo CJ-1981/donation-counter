@@ -157,15 +157,6 @@ export default function DonationTrackerPage() {
   // Auto-unlock from cached key (PWA / returning user)
   useEffect(() => {
     try {
-      const cachedTime = localStorage.getItem('church_member_key_timestamp')
-      if (cachedTime) {
-        const timestamp = parseInt(cachedTime, 10)
-        if (!isNaN(timestamp) && Date.now() - timestamp > 24 * 60 * 60 * 1000) {
-          localStorage.removeItem('church_member_key')
-          localStorage.removeItem('church_member_key_timestamp')
-          return
-        }
-      }
       const cachedKey = localStorage.getItem('church_member_key')
       // SECURITY NOTE: Cached key from previous session. See security note below on storage.
       if (cachedKey) {
@@ -181,18 +172,15 @@ export default function DonationTrackerPage() {
           } else {
             // Decrypted data is invalid — clear the bad key
             localStorage.removeItem('church_member_key')
-            localStorage.removeItem('church_member_key_timestamp')
           }
         } else {
           // Decryption returned empty — key is wrong, clear it
           localStorage.removeItem('church_member_key')
-          localStorage.removeItem('church_member_key_timestamp')
         }
       }
     } catch {
       // Cached key invalid, clear it
       localStorage.removeItem('church_member_key')
-      localStorage.removeItem('church_member_key_timestamp')
     }
   }, [])
   const [showDropdown, setShowDropdown] = useState(false)
@@ -260,7 +248,6 @@ export default function DonationTrackerPage() {
           // Trade-off: localStorage is accessible to any JS on the same origin.
           // For higher security, use sessionStorage instead (clears on tab close).
           localStorage.setItem('church_member_key', keyInput)
-          localStorage.setItem('church_member_key_timestamp', Date.now().toString())
           setKeyInput('')
           return
         }
