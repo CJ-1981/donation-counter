@@ -10,6 +10,7 @@ function App() {
   const touchStartX = useRef<number | null>(null)
   const touchStartY = useRef<number | null>(null)
   const isSwiping = useRef(false)
+  const touchStartHasScrollLeft = useRef(false)
   const cashScrollRef = useRef<HTMLDivElement>(null)
   const donationScrollRef = useRef<HTMLDivElement>(null)
 
@@ -17,6 +18,17 @@ function App() {
     touchStartX.current = e.touches[0].clientX
     touchStartY.current = e.touches[0].clientY
     isSwiping.current = false
+
+    let el = e.target as HTMLElement | null
+    let hasScrollLeft = false
+    while (el && el !== e.currentTarget) {
+      if (el.scrollLeft > 0) {
+        hasScrollLeft = true
+        break
+      }
+      el = el.parentElement
+    }
+    touchStartHasScrollLeft.current = hasScrollLeft
   }, [])
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
@@ -46,6 +58,17 @@ function App() {
 
     if (deltaX > 0) {
       // Swipe right → go to previous tab (Cash Counter)
+      let el = e.target as HTMLElement | null
+      let isHorizontallyScrolled = touchStartHasScrollLeft.current
+      while (!isHorizontallyScrolled && el && el !== e.currentTarget) {
+        if (el.scrollLeft > 0) {
+          isHorizontallyScrolled = true
+          break
+        }
+        el = el.parentElement
+      }
+      if (isHorizontallyScrolled) return
+
       setActiveTab(prev => prev === 'donation-tracker' ? 'cash-counter' : prev)
     } else {
       // Swipe left → go to next tab (Donation Tracker)
