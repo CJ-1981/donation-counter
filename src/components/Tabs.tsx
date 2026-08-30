@@ -53,7 +53,7 @@ export function Tabs({ activeTab, onTabChange }: TabsProps) {
         } else {
           setTrackerTotal(null)
         }
-      } catch (e) {
+      } catch {
         // ignore
       }
     }
@@ -62,6 +62,10 @@ export function Tabs({ activeTab, onTabChange }: TabsProps) {
     const interval = setInterval(pollTotals, 1000)
     return () => clearInterval(interval)
   }, [])
+
+  const namedCashTotal = cashTotal ? cashTotal.named : 0
+  const currentTrackerTotal = trackerTotal !== null ? trackerTotal : 0
+  const isNamedMatched = Math.abs(currentTrackerTotal - namedCashTotal) < 0.01
 
   return (
     <div className="flex bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm shrink-0 z-50" role="tablist">
@@ -100,9 +104,12 @@ export function Tabs({ activeTab, onTabChange }: TabsProps) {
         }`}
       >
         <div className="font-bold">{t('tracker.tabDonationTracker')}</div>
-        {trackerTotal !== null && trackerTotal > 0 && (
+        {trackerTotal !== null && (trackerTotal > 0 || namedCashTotal > 0) && (
           <div className="text-[10px] sm:text-xs opacity-90 leading-tight block mt-0.5 font-normal">
-            {t('cashCounter.totalCounted')}: {currencySymbol} {trackerTotal.toLocaleString()}
+            {t('cashCounter.totalCounted')}: {currencySymbol} {currentTrackerTotal.toLocaleString()}<br/>
+            <span className={isNamedMatched ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-amber-600 dark:text-amber-400 font-medium'}>
+              {isNamedMatched ? t('tracker.namedMatch') : t('tracker.namedMismatch')}
+            </span>
           </div>
         )}
       </button>
