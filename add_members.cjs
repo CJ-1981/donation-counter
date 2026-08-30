@@ -13,41 +13,10 @@ function processMembers(existingJson, namesInput) {
         }
     }
 
-    const parseNamesInput = (input) => {
-        if (!input) return [];
-        const names = [];
-        let current = '';
-        let inQuotes = false;
-
-        for (let i = 0; i < input.length; i++) {
-            const char = input[i];
-            if (char === '"') {
-                inQuotes = !inQuotes;
-                current += char;
-            } else if (char === ',' && !inQuotes) {
-                names.push(current);
-                current = '';
-            } else {
-                current += char;
-            }
-        }
-        if (current.length > 0) {
-            names.push(current);
-        }
-
-        return names
-            .map(n => n.trim())
-            .map(n => {
-                let s = n;
-                if (s.startsWith('"') && s.endsWith('"') && s.length >= 2) {
-                    s = s.slice(1, -1);
-                }
-                return s.trim();
-            })
-            .filter(n => n.length > 0);
-    };
-
-    const newNames = parseNamesInput(namesInput);
+    const newNames = (namesInput || '')
+        .split(',')
+        .map(n => n.trim())
+        .filter(n => n.length > 0);
 
     const existingSet = new Set(existing);
     const addedNames = [];
