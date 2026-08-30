@@ -23,6 +23,7 @@ interface StoredCashData {
   namedCounts: Record<number, number>
   lastDate: string
   currency: string
+  timestamp?: number
 }
 
 interface CashCounterState {
@@ -108,8 +109,9 @@ export default function CashCounterPage() {
         const data: StoredCashData = JSON.parse(stored)
         const today = getLocalDateString()
 
-        // Remove stale data from previous day
-        if (data.lastDate !== today) {
+        // Remove stale data from previous day or older than 24 hours
+        const is24HoursExpired = typeof data.timestamp === 'number' && (Date.now() - data.timestamp > 24 * 60 * 60 * 1000)
+        if (data.lastDate !== today || is24HoursExpired) {
           localStorage.removeItem(storageKey)
           return createEmptyState(initialCurrency)
         }
@@ -135,6 +137,7 @@ export default function CashCounterPage() {
             namedCounts: data.namedCounts,
             lastDate: data.lastDate,
             currency: 'EUR',
+            timestamp: Date.now(),
           }
           localStorage.setItem(storageKey, JSON.stringify(v3Data))
           return {
@@ -235,6 +238,7 @@ export default function CashCounterPage() {
           namedCounts: currentState.namedCounts,
           lastDate: getLocalDateString(),
           currency: currentCurrency,
+          timestamp: Date.now(),
         }
         localStorage.setItem(storageKey, JSON.stringify(data))
       } catch (err) {
@@ -275,6 +279,7 @@ export default function CashCounterPage() {
             namedCounts: previousStateRef.current.namedCounts,
             lastDate: getLocalDateString(),
             currency: configRef.current.currency,
+            timestamp: Date.now(),
           }
           localStorage.setItem(storageKey, JSON.stringify(data))
         } catch (err) {
