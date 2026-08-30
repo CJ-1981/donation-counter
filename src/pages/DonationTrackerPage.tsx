@@ -113,9 +113,17 @@ export default function DonationTrackerPage() {
     return []
   })
 
+  const isInitialLogsRender = useRef(true)
   useEffect(() => {
     localStorage.setItem('church_donation_logs', JSON.stringify(logs))
-    localStorage.setItem('church_donation_logs_timestamp', Date.now().toString())
+    if (isInitialLogsRender.current) {
+      isInitialLogsRender.current = false
+      if (!localStorage.getItem('church_donation_logs_timestamp')) {
+        localStorage.setItem('church_donation_logs_timestamp', Date.now().toString())
+      }
+    } else {
+      localStorage.setItem('church_donation_logs_timestamp', Date.now().toString())
+    }
   }, [logs])
 
   const [nameInput, setNameInput] = useState('')
