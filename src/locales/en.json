@@ -108,6 +108,8 @@
     "tabCashCounter": "Cash Counter",
     "tabDonationTracker": "Donation Tracker",
     "currency": "Currency",
-    "newMemberSuffix": " (New Member)"
+    "newMemberSuffix": " (New Member)",
+    "namedMatch": "✓ Matches named total",
+    "namedMismatch": "⚠️ Mismatches named total"
   }
 }

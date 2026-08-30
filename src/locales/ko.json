@@ -108,6 +108,8 @@
     "tabCashCounter": "현금 계산기",
     "tabDonationTracker": "헌금 계수기",
     "currency": "화폐",
-    "newMemberSuffix": " (신규성도)"
+    "newMemberSuffix": " (신규성도)",
+    "namedMatch": "✓ 기명 합계와 일치",
+    "namedMismatch": "⚠️ 기명 합계와 불일치"
   }
 }
