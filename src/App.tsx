@@ -10,7 +10,8 @@ function App() {
   const touchStartX = useRef<number | null>(null)
   const touchStartY = useRef<number | null>(null)
   const isSwiping = useRef(false)
-  const touchStartHasScrollLeft = useRef(false)
+  const touchStartCanScrollLeft = useRef(false)
+  const touchStartCanScrollRight = useRef(false)
   const cashScrollRef = useRef<HTMLDivElement>(null)
   const donationScrollRef = useRef<HTMLDivElement>(null)
 
@@ -20,15 +21,28 @@ function App() {
     isSwiping.current = false
 
     let el = e.target as HTMLElement | null
-    let hasScrollLeft = false
+    let canLeft = false
+    let canRight = false
+
     while (el && el !== e.currentTarget) {
-      if (el.scrollLeft > 0) {
-        hasScrollLeft = true
-        break
+      const isScrollableX = el.scrollWidth > el.clientWidth + 1
+      const style = window.getComputedStyle(el)
+      const overflowX = style.overflowX
+      const permitsScroll = overflowX === 'auto' || overflowX === 'scroll' || isScrollableX
+
+      if (isScrollableX && permitsScroll) {
+        if (el.scrollLeft > 0) {
+          canLeft = true
+        }
+        if (el.scrollLeft + el.clientWidth < el.scrollWidth - 1) {
+          canRight = true
+        }
       }
       el = el.parentElement
     }
-    touchStartHasScrollLeft.current = hasScrollLeft
+
+    touchStartCanScrollLeft.current = canLeft
+    touchStartCanScrollRight.current = canRight
   }, [])
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
@@ -56,19 +70,33 @@ function App() {
 
     if (Math.abs(deltaX) < SWIPE_THRESHOLD) return
 
-    if (deltaX > 0) {
-      // Swipe right → go to previous tab (Cash Counter)
-      let el = e.target as HTMLElement | null
-      let isHorizontallyScrolled = touchStartHasScrollLeft.current
-      while (!isHorizontallyScrolled && el && el !== e.currentTarget) {
-        if (el.scrollLeft > 0) {
-          isHorizontallyScrolled = true
+    // Check if touch target or any ancestor is horizontally scrollable in swipe direction
+    let el = e.target as HTMLElement | null
+    let canScrollInSwipeDirection = deltaX > 0 ? touchStartCanScrollLeft.current : touchStartCanScrollRight.current
+
+    while (!canScrollInSwipeDirection && el && el !== e.currentTarget) {
+      const isScrollableX = el.scrollWidth > el.clientWidth + 1
+      const style = window.getComputedStyle(el)
+      const overflowX = style.overflowX
+      const permitsScroll = overflowX === 'auto' || overflowX === 'scroll' || isScrollableX
+
+      if (isScrollableX && permitsScroll) {
+        if (deltaX > 0 && el.scrollLeft > 0) {
+          canScrollInSwipeDirection = true
           break
         }
-        el = el.parentElement
+        if (deltaX < 0 && el.scrollLeft + el.clientWidth < el.scrollWidth - 1) {
+          canScrollInSwipeDirection = true
+          break
+        }
       }
-      if (isHorizontallyScrolled) return
+      el = el.parentElement
+    }
 
+    if (canScrollInSwipeDirection) return
+
+    if (deltaX > 0) {
+      // Swipe right → go to previous tab (Cash Counter)
       setActiveTab(prev => prev === 'donation-tracker' ? 'cash-counter' : prev)
     } else {
       // Swipe left → go to next tab (Donation Tracker)
